@@ -14,7 +14,6 @@ fetch("data.json")
 
 // 🔹 MAIN FUNCTION
 function checkNews() {
-  let resultBox = document.getElementById("resultBox");
   
   resultBox.className = "";
   resultBox.innerHTML = "⏳ Checking...";
