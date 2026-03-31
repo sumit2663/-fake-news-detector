@@ -1,33 +1,23 @@
 <!DOCTYPE html>
 <html>
+<head>
+  <title>Fake News Detector</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
 <body>
 
-<h2>Fake News Detector 🕵️</h2>
+<h1>🕵️ Fake News Detector</h1>
 
-<textarea id="newsText" rows="10" cols="50"></textarea>
-<br><br>
+<textarea id="newsText" placeholder="Paste news here..."></textarea>
 
-<button onclick="checkNews()">Check</button>
+<br>
 
-<h3 id="result"></h3>
+<button onclick="checkNews()">Check News</button>
 
-<script>
-function checkNews() {
-    let text = document.getElementById("newsText").value;
+<div id="resultBox"></div>
 
-    fetch("/check", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({text: text})
-    })
-    .then(res => res.json())
-    .then(data => {
-        document.getElementById("result").innerText = data.result;
-    });
-}
-</script>
+<script src="script.js"></script>
 
 </body>
 </html>
