@@ -1,9 +1,31 @@
+// 🔹 LOAD DATASET (VERY IMPORTANT)
+let dataset = [];
+
+fetch("data.json")
+  .then(res => res.json())
+  .then(data => {
+      dataset = data;
+      console.log("Dataset loaded:", dataset);
+  })
+  .catch(err => {
+      console.error("Error loading dataset:", err);
+  });
+
+
+// 🔹 MAIN FUNCTION
 function checkNews() {
+
+    // 🚨 Safety check
+    if (dataset.length === 0) {
+        alert("Dataset not loaded yet!");
+        return;
+    }
+
     let text = document.getElementById("newsText").value.toLowerCase();
 
     let score = 0;
 
-    // 🟡 1. Keyword detection
+    // 🟡 Keyword detection
     let keywords = [
         "shocking",
         "100% cure",
@@ -25,7 +47,7 @@ function checkNews() {
         }
     });
 
-    // 🔵 2. Dataset matching (NEW)
+    // 🔵 Dataset matching
     let datasetMatch = null;
 
     dataset.forEach(item => {
@@ -47,7 +69,7 @@ function checkNews() {
     let result = "";
     let className = "";
 
-    // 🔴 3. Final decision
+    // 🔴 Final decision
     if (datasetMatch) {
         result = datasetMatch.label === "fake"
             ? "❌ Fake (Matched Dataset)"
