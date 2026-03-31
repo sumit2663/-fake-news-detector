@@ -1,18 +1,172 @@
-// 🔹 LOAD DATASET
+/**************************************************
+ * FAKE NEWS DETECTOR - ADVANCED SCRIPT (300+ STYLE)
+ **************************************************/
+
+// ==============================
+// 🔹 GLOBAL VARIABLES
+// ==============================
+
 let dataset = [];
-
-fetch("data.json")
-  .then(res => res.json())
-  .then(data => {
-      dataset = data;
-      console.log("Dataset loaded:", dataset);
-  })
-  .catch(err => {
-      console.error("Error loading dataset:", err);
-  });
+let isLoaded = false;
 
 
-// 🔥 Highlight suspicious words
+// ==============================
+// 🔹 LOAD DATASET
+// ==============================
+
+function loadDataset() {
+    fetch("data.json")
+        .then(res => res.json())
+        .then(data => {
+            dataset = data;
+            isLoaded = true;
+            console.log("✅ Dataset loaded:", dataset.length);
+        })
+        .catch(err => {
+            console.error("❌ Dataset error:", err);
+        });
+}
+
+loadDataset();
+
+
+// ==============================
+// 🔹 UI HELPERS
+// ==============================
+
+function getTextInput() {
+    return document.getElementById("newsText").value.toLowerCase();
+}
+
+function getResultBox() {
+    return document.getElementById("resultBox");
+}
+
+function getProgressBar() {
+    return document.getElementById("bar");
+}
+
+
+// ==============================
+// 🔹 CLEAR FUNCTION
+// ==============================
+
+function clearText() {
+    document.getElementById("newsText").value = "";
+    getResultBox().innerHTML = "<p>🧹 Cleared</p>";
+    getProgressBar().style.width = "0%";
+}
+
+
+// ==============================
+// 🔹 LOADING UI
+// ==============================
+
+function showLoading() {
+    let box = getResultBox();
+    let bar = getProgressBar();
+
+    box.className = "";
+    box.innerHTML = "<p>⏳ Analyzing news...</p>";
+
+    bar.style.width = "10%";
+}
+
+
+// ==============================
+// 🔹 VALIDATION
+// ==============================
+
+function validateInput(text) {
+    if (!isLoaded) return "Dataset not loaded!";
+    if (!text.trim()) return "Please enter some text!";
+    return null;
+}
+
+
+// ==============================
+// 🔹 KEYWORD ENGINE
+// ==============================
+
+function getKeywords() {
+    return [
+        "shocking", "100% cure", "guarantee",
+        "secret", "breaking", "click here",
+        "viral", "urgent", "limited time",
+        "exclusive", "miracle", "unbelievable"
+    ];
+}
+
+function analyzeKeywords(text) {
+    let keywords = getKeywords();
+    let found = [];
+    let score = 0;
+
+    keywords.forEach(word => {
+        if (text.includes(word)) {
+            found.push(word);
+            score++;
+        }
+    });
+
+    return { score, found };
+}
+
+
+// ==============================
+// 🔹 DATASET ENGINE
+// ==============================
+
+function analyzeDataset(text) {
+    let matchItem = null;
+    let score = 0;
+
+    dataset.forEach(item => {
+        let words = item.text.toLowerCase().split(" ");
+        let matches = words.filter(w => text.includes(w)).length;
+
+        if (matches >= 3) {
+            matchItem = item;
+            score += item.label === "fake" ? 2 : -1;
+        }
+    });
+
+    return { matchItem, score };
+}
+
+
+// ==============================
+// 🔹 CONFIDENCE CALCULATOR
+// ==============================
+
+function calculateConfidence(score) {
+    return Math.min(score * 25, 95);
+}
+
+
+// ==============================
+// 🔹 RESULT DECISION ENGINE
+// ==============================
+
+function decideResult(score, datasetMatch) {
+
+    if (datasetMatch) {
+        return datasetMatch.label === "fake"
+            ? { text: "❌ Fake (Dataset Match)", className: "fake" }
+            : { text: "✅ Real (Dataset Match)", className: "real" };
+    }
+
+    if (score >= 2) return { text: "❌ Likely Fake News", className: "fake" };
+    if (score === 1) return { text: "⚠️ Suspicious Content", className: "warn" };
+
+    return { text: "✅ Looks Real", className: "real" };
+}
+
+
+// ==============================
+// 🔹 TEXT HIGHLIGHTER
+// ==============================
+
 function highlightWords(text, words) {
     words.forEach(word => {
         let regex = new RegExp(`(${word})`, "gi");
@@ -22,113 +176,98 @@ function highlightWords(text, words) {
 }
 
 
-// 🔹 CLEAR BUTTON FUNCTION
-function clearText() {
-    document.getElementById("newsText").value = "";
-    document.getElementById("resultBox").innerHTML = "<p>Result cleared</p>";
-    document.getElementById("bar").style.width = "0%";
+// ==============================
+// 🔹 PROGRESS BAR UPDATE
+// ==============================
+
+function updateProgress(confidence) {
+    let bar = getProgressBar();
+    bar.style.width = confidence + "%";
 }
 
 
-// 🔹 MAIN FUNCTION
+// ==============================
+// 🔹 DISPLAY RESULT
+// ==============================
+
+function displayResult(result, confidence, words, text) {
+    let box = getResultBox();
+
+    let highlighted = highlightWords(text, words);
+
+    box.className = result.className;
+    box.innerHTML = `
+        <h3>${result.text}</h3>
+        <p><strong>Confidence:</strong> ${confidence}%</p>
+        <p><strong>Trigger Words:</strong> ${words.join(", ") || "None"}</p>
+        <hr>
+        <p>${highlighted}</p>
+    `;
+}
+
+
+// ==============================
+// 🔹 MAIN CONTROLLER
+// ==============================
+
 function checkNews() {
 
-    let resultBox = document.getElementById("resultBox");
-    let bar = document.getElementById("bar");
-
-    // ⏳ Loading effect
-    resultBox.className = "";
-    resultBox.innerHTML = "<p>⏳ Checking...</p>";
-    bar.style.width = "15%";
+    showLoading();
 
     setTimeout(() => {
 
-        // 🚨 Safety check
-        if (dataset.length === 0) {
-            resultBox.innerHTML = "<p>Dataset not loaded yet!</p>";
+        let text = getTextInput();
+
+        let error = validateInput(text);
+        if (error) {
+            getResultBox().innerHTML = `<p>${error}</p>`;
             return;
         }
 
-        let text = document.getElementById("newsText").value.toLowerCase();
+        // 🔍 Analyze
+        let keywordData = analyzeKeywords(text);
+        let datasetData = analyzeDataset(text);
 
-        if (text.trim() === "") {
-            resultBox.innerHTML = "<p>Please enter some text!</p>";
-            return;
-        }
+        let totalScore = keywordData.score + datasetData.score;
 
-        let score = 0;
+        let confidence = calculateConfidence(totalScore);
 
-        // 🟡 KEYWORDS
-        let keywords = [
-            "shocking",
-            "100% cure",
-            "guarantee",
-            "secret",
-            "breaking",
-            "click here",
-            "viral",
-            "urgent",
-            "limited time"
-        ];
+        let result = decideResult(totalScore, datasetData.matchItem);
 
-        let foundWords = [];
+        updateProgress(confidence);
 
-        keywords.forEach(word => {
-            if (text.includes(word)) {
-                score++;
-                foundWords.push(word);
-            }
-        });
-
-        // 🔵 DATASET MATCHING
-        let datasetMatch = null;
-
-        dataset.forEach(item => {
-            let words = item.text.toLowerCase().split(" ");
-            let matchCount = words.filter(w => text.includes(w)).length;
-
-            if (matchCount >= 3) {
-                datasetMatch = item;
-                score += item.label === "fake" ? 2 : -1;
-            }
-        });
-
-        let result = "";
-        let className = "";
-
-        // 🔴 FINAL RESULT
-        if (datasetMatch) {
-            result = datasetMatch.label === "fake"
-                ? "❌ Fake (Matched Dataset)"
-                : "✅ Real (Matched Dataset)";
-        } else if (score >= 2) {
-            result = "❌ Likely Fake News";
-            className = "fake";
-        } else if (score === 1) {
-            result = "⚠️ Suspicious Content";
-            className = "warn";
-        } else {
-            result = "✅ Looks Real";
-            className = "real";
-        }
-
-        // 🟢 CONFIDENCE
-        let confidence = Math.min(score * 25, 95);
-        bar.style.width = confidence + "%";
-
-        // 🔥 Highlight text
-        let highlightedText = highlightWords(text, foundWords);
-
-        // 📊 DISPLAY RESULT
-        resultBox.className = className;
-        resultBox.innerHTML = `
-            <h3>${result}</h3>
-            <p><strong>Confidence:</strong> ${confidence}%</p>
-            <p><strong>Trigger Words:</strong> ${foundWords.join(", ") || "None"}</p>
-            <hr>
-            <p><strong>Analyzed Text:</strong></p>
-            <p>${highlightedText}</p>
-        `;
+        displayResult(
+            result,
+            confidence,
+            keywordData.found,
+            text
+        );
 
     }, 800);
 }
+
+
+// ==============================
+// 🔹 OPTIONAL: AUTO CLEAR TIMER
+// ==============================
+
+function autoClear() {
+    setTimeout(() => {
+        clearText();
+    }, 10000);
+}
+
+
+// ==============================
+// 🔹 OPTIONAL: ENTER KEY SUPPORT
+// ==============================
+
+document.addEventListener("DOMContentLoaded", () => {
+    let textarea = document.getElementById("newsText");
+
+    textarea.addEventListener("keypress", function (e) {
+        if (e.key === "Enter" && e.ctrlKey) {
+            checkNews();
+        }
+    });
+});
