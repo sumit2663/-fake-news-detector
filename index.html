@@ -1,23 +1,85 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Fake News Detector</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake News Detector</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
 </head>
 
 <body>
 
-<h1>🕵️ Fake News Detector</h1>
+    <!-- 🔷 HEADER -->
+    <header>
+        <h1>🕵️ Fake News Detector</h1>
+        <p>Analyze news and detect misinformation instantly</p>
+    </header>
 
-<textarea id="newsText" placeholder="Paste news here..."></textarea>
+    <!-- 🔶 MAIN CONTAINER -->
+    <main class="container">
 
-<br>
+        <!-- 📝 INPUT SECTION -->
+        <section class="input-section">
 
-<button onclick="checkNews()">Check News</button>
+            <h2>Enter News Content</h2>
 
-<div id="resultBox"></div>
+            <textarea 
+                id="newsText" 
+                placeholder="Paste news article, headline, or message here..."
+            ></textarea>
 
-<script src="script.js"></script>
+            <!-- 🔘 BUTTONS -->
+            <div class="button-group">
+                <button onclick="checkNews()">Check News</button>
+                <button onclick="clearText()" class="secondary">Clear</button>
+            </div>
+
+        </section>
+
+        <!-- 📊 RESULT SECTION -->
+        <section class="result-section">
+
+            <h2>Analysis Result</h2>
+
+            <div id="resultBox">
+                <p>Result will appear here...</p>
+            </div>
+
+            <!-- 📈 PROGRESS BAR -->
+            <div class="progress-container">
+                <div id="bar"></div>
+            </div>
+
+        </section>
+
+        <!-- 📌 INFO SECTION -->
+        <section class="info-section">
+
+            <h3>How it works</h3>
+
+            <ul>
+                <li>🔍 Detects suspicious keywords</li>
+                <li>📦 Matches known fake/real news dataset</li>
+                <li>📊 Calculates confidence score</li>
+                <li>⚡ Gives instant result</li>
+            </ul>
+
+        </section>
+
+    </main>
+
+    <!-- 🔻 FOOTER -->
+    <footer>
+        <p>Built for learning • Fake News Detection System</p>
+    </footer>
+
+    <!-- JS -->
+    <script src="script.js"></script>
 
 </body>
 </html>
