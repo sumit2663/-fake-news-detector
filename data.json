@@ -1,0 +1,23 @@
+[
+  {"text": "Government launches new education policy", "label": "real"},
+  {"text": "Scientists discover new planet in solar system", "label": "real"},
+  {"text": "Drinking bleach cures all diseases", "label": "fake"},
+  {"text": "Celebrity caught in shocking scandal", "label": "fake"},
+  {"text": "India wins cricket match against Australia", "label": "real"},
+  {"text": "Secret government chip controls humans", "label": "fake"},
+  {"text": "New vaccine approved by WHO", "label": "real"},
+  {"text": "Aliens landed in Delhi yesterday", "label": "fake"},
+  {"text": "Stock market hits record high", "label": "real"},
+  {"text": "Miracle herb cures cancer instantly", "label": "fake"},
+
+  {"text": "NASA launches new satellite", "label": "real"},
+  {"text": "Time travel machine invented by student", "label": "fake"},
+  {"text": "Earthquake reported in Japan today", "label": "real"},
+  {"text": "Magic oil grows hair overnight", "label": "fake"},
+  {"text": "New smartphone released by Apple", "label": "real"},
+  {"text": "Government hiding alien technology", "label": "fake"},
+  {"text": "Flood warning issued in coastal areas", "label": "real"},
+  {"text": "Cure for diabetes found in kitchen spice", "label": "fake"},
+  {"text": "Olympics scheduled for next year", "label": "real"},
+  {"text": "Man lives without food for 1 year", "label": "fake"}
+]
