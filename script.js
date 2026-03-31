@@ -1,3 +1,12 @@
+let dataset = [];
+
+fetch("data.json")
+  .then(res => res.json())
+  .then(data => {
+      dataset = data;
+      console.log("Dataset loaded:", dataset);
+  });
+
 function checkNews() {
     let text = document.getElementById("newsText").value.toLowerCase();
 
