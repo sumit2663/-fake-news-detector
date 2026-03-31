@@ -1,18 +1,9 @@
-let dataset = [];
-
-fetch("data.json")
-  .then(res => res.json())
-  .then(data => {
-      dataset = data;
-      console.log("Dataset loaded:", dataset);
-  });
-
 function checkNews() {
     let text = document.getElementById("newsText").value.toLowerCase();
 
     let score = 0;
 
-    // keyword list
+    // 🟡 1. Keyword detection
     let keywords = [
         "shocking",
         "100% cure",
@@ -34,12 +25,34 @@ function checkNews() {
         }
     });
 
+    // 🔵 2. Dataset matching (NEW)
+    let datasetMatch = null;
+
+    dataset.forEach(item => {
+        let words = item.text.toLowerCase().split(" ");
+        let matchCount = 0;
+
+        words.forEach(word => {
+            if (text.includes(word)) matchCount++;
+        });
+
+        if (matchCount >= 3) {
+            datasetMatch = item;
+            score += item.label === "fake" ? 2 : -1;
+        }
+    });
+
     let resultBox = document.getElementById("resultBox");
 
     let result = "";
     let className = "";
 
-    if (score >= 2) {
+    // 🔴 3. Final decision
+    if (datasetMatch) {
+        result = datasetMatch.label === "fake"
+            ? "❌ Fake (Matched Dataset)"
+            : "✅ Real (Matched Dataset)";
+    } else if (score >= 2) {
         result = "❌ Likely Fake News";
         className = "fake";
     } else if (score === 1) {
@@ -50,8 +63,8 @@ function checkNews() {
         className = "real";
     }
 
-    // confidence calculation
-    let confidence = Math.min(score * 30, 90);
+    // 🟢 Confidence
+    let confidence = Math.min(score * 25, 95);
 
     resultBox.className = className;
     resultBox.innerHTML = `
