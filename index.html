@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>Fake News Detector 🕵️</h2>
+
+<textarea id="newsText" rows="10" cols="50"></textarea>
+<br><br>
+
+<button onclick="checkNews()">Check</button>
+
+<h3 id="result"></h3>
+
+<script>
+function checkNews() {
+    let text = document.getElementById("newsText").value;
+
+    fetch("/check", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({text: text})
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("result").innerText = data.result;
+    });
+}
+</script>
+
+</body>
+</html>
