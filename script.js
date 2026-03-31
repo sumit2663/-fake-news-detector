@@ -12,29 +12,53 @@ fetch("data.json")
   });
 
 
+// 🔥 Highlight suspicious words
+function highlightWords(text, words) {
+    words.forEach(word => {
+        let regex = new RegExp(`(${word})`, "gi");
+        text = text.replace(regex, `<span style="color:red; font-weight:bold;">$1</span>`);
+    });
+    return text;
+}
+
+
+// 🔹 CLEAR BUTTON FUNCTION
+function clearText() {
+    document.getElementById("newsText").value = "";
+    document.getElementById("resultBox").innerHTML = "<p>Result cleared</p>";
+    document.getElementById("bar").style.width = "0%";
+}
+
+
 // 🔹 MAIN FUNCTION
 function checkNews() {
 
     let resultBox = document.getElementById("resultBox");
+    let bar = document.getElementById("bar");
 
     // ⏳ Loading effect
     resultBox.className = "";
-    resultBox.innerHTML = "⏳ Checking...";
+    resultBox.innerHTML = "<p>⏳ Checking...</p>";
+    bar.style.width = "15%";
 
-    // Delay for smooth UI
     setTimeout(() => {
 
         // 🚨 Safety check
         if (dataset.length === 0) {
-            resultBox.innerHTML = "Dataset not loaded yet!";
+            resultBox.innerHTML = "<p>Dataset not loaded yet!</p>";
             return;
         }
 
         let text = document.getElementById("newsText").value.toLowerCase();
 
+        if (text.trim() === "") {
+            resultBox.innerHTML = "<p>Please enter some text!</p>";
+            return;
+        }
+
         let score = 0;
 
-        // 🟡 Keyword detection
+        // 🟡 KEYWORDS
         let keywords = [
             "shocking",
             "100% cure",
@@ -56,16 +80,12 @@ function checkNews() {
             }
         });
 
-        // 🔵 Dataset matching
+        // 🔵 DATASET MATCHING
         let datasetMatch = null;
 
         dataset.forEach(item => {
             let words = item.text.toLowerCase().split(" ");
-            let matchCount = 0;
-
-            words.forEach(word => {
-                if (text.includes(word)) matchCount++;
-            });
+            let matchCount = words.filter(w => text.includes(w)).length;
 
             if (matchCount >= 3) {
                 datasetMatch = item;
@@ -76,7 +96,7 @@ function checkNews() {
         let result = "";
         let className = "";
 
-        // 🔴 Final decision
+        // 🔴 FINAL RESULT
         if (datasetMatch) {
             result = datasetMatch.label === "fake"
                 ? "❌ Fake (Matched Dataset)"
@@ -92,14 +112,22 @@ function checkNews() {
             className = "real";
         }
 
-        // 🟢 Confidence
+        // 🟢 CONFIDENCE
         let confidence = Math.min(score * 25, 95);
+        bar.style.width = confidence + "%";
 
+        // 🔥 Highlight text
+        let highlightedText = highlightWords(text, foundWords);
+
+        // 📊 DISPLAY RESULT
         resultBox.className = className;
         resultBox.innerHTML = `
-            ${result} <br><br>
-            Confidence: ${confidence}% <br>
-            Trigger Words: ${foundWords.join(", ") || "None"}
+            <h3>${result}</h3>
+            <p><strong>Confidence:</strong> ${confidence}%</p>
+            <p><strong>Trigger Words:</strong> ${foundWords.join(", ") || "None"}</p>
+            <hr>
+            <p><strong>Analyzed Text:</strong></p>
+            <p>${highlightedText}</p>
         `;
 
     }, 800);
