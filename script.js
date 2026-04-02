@@ -372,8 +372,10 @@ function displayResult(result, confidence, words, text, datasetData) {
 
     <hr>
 
-    <p><strong>Closest Match:</strong></p>
-    <p style="opacity:0.7">${matchedText}</p>
+    <div class="match-box">
+      <p class="match-title">Closest Match</p>
+      <p class="match-text">${matchedText}</p>
+    </div>
 
     <hr>
 
