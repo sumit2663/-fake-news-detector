@@ -1,5 +1,5 @@
 /**************************************************
- * FAKE NEWS DETECTOR - FINAL TF-IDF VERSION
+ * FAKE NEWS DETECTOR - ADVANCED SCRIPT (300+ STYLE)
  **************************************************/
 
 // ==============================
@@ -8,10 +8,6 @@
 
 let dataset = [];
 let isLoaded = false;
-
-let vocabulary = [];
-let idfValues = {};
-let datasetVectors = [];
 
 
 // ==============================
@@ -24,9 +20,6 @@ function loadDataset() {
         .then(data => {
             dataset = data;
             isLoaded = true;
-
-            prepareTFIDF(); // 🔥 IMPORTANT
-
             console.log("✅ Dataset loaded:", dataset.length);
         })
         .catch(err => {
@@ -38,102 +31,79 @@ loadDataset();
 
 
 // ==============================
-// 🔹 TF-IDF ENGINE
+// 🔹 UI HELPERS
 // ==============================
 
-function getAllWords(text) {
-    return text
-        .toLowerCase()
-        .replace(/[^\w\s]/g, "")
-        .split(" ")
-        .filter(w => w.length > 2);
+function getTextInput() {
+    return document.getElementById("newsText").value.toLowerCase();
 }
 
-function buildVocabulary(dataset) {
-    let vocab = new Set();
-
-    dataset.forEach(item => {
-        getAllWords(item.text).forEach(word => vocab.add(word));
-    });
-
-    return Array.from(vocab);
+function getResultBox() {
+    return document.getElementById("resultBox");
 }
 
-function calculateIDF(dataset, vocab) {
-    let idf = {};
-
-    vocab.forEach(word => {
-        let count = 0;
-
-        dataset.forEach(item => {
-            if (getAllWords(item.text).includes(word)) count++;
-        });
-
-        idf[word] = Math.log(dataset.length / (count + 1));
-    });
-
-    return idf;
-}
-
-function getTF(text) {
-    let words = getAllWords(text);
-    let tf = {};
-
-    words.forEach(word => {
-        tf[word] = (tf[word] || 0) + 1;
-    });
-
-    return tf;
-}
-
-function getTFIDF(tf, idf) {
-    let tfidf = {};
-
-    for (let word in tf) {
-        tfidf[word] = tf[word] * (idf[word] || 0);
-    }
-
-    return tfidf;
-}
-
-function cosineSimilarity(vec1, vec2) {
-    let dot = 0, mag1 = 0, mag2 = 0;
-
-    let words = new Set([...Object.keys(vec1), ...Object.keys(vec2)]);
-
-    words.forEach(word => {
-        let v1 = vec1[word] || 0;
-        let v2 = vec2[word] || 0;
-
-        dot += v1 * v2;
-        mag1 += v1 * v1;
-        mag2 += v2 * v2;
-    });
-
-    return dot / (Math.sqrt(mag1) * Math.sqrt(mag2) || 1);
+function getProgressBar() {
+    return document.getElementById("bar");
 }
 
 
 // ==============================
-// 🔹 PREPARE TF-IDF
+// 🔹 CLEAR FUNCTION
 // ==============================
 
-function prepareTFIDF() {
-    vocabulary = buildVocabulary(dataset);
-    idfValues = calculateIDF(dataset, vocabulary);
+function clearText() {
+    document.getElementById("newsText").value = "";
+    getResultBox().innerHTML = "<p>🧹 Cleared</p>";
+    getProgressBar().style.width = "0%";
+}
 
-    datasetVectors = dataset.map(item => {
-        let tf = getTF(item.text);
-        return getTFIDF(tf, idfValues);
-    });
 
-    console.log("✅ TF-IDF Ready");
+// ==============================
+// 🔹 LOADING UI
+// ==============================
+
+function showLoading() {
+    let box = getResultBox();
+    let bar = getProgressBar();
+
+    box.className = "";
+    box.innerHTML = "<p>⏳ Analyzing news...</p>";
+
+    bar.style.width = "10%";
+}
+
+
+// ==============================
+// 🔹 VALIDATION
+// ==============================
+
+function validateInput(text) {
+    if (!isLoaded) return "Dataset not loaded!";
+    if (!text.trim()) return "Please enter some text!";
+    return null;
 }
 
 
 // ==============================
 // 🔹 KEYWORD ENGINE
 // ==============================
+
+function getKeywords() {
+    return [
+        "shocking",
+        "fake",
+        "rumor",
+        "unverified",
+        "conspiracy",
+        "leak",
+        "secret",
+        "viral",
+        "breaking",
+        "urgent",
+        "limited time",
+        "click here"
+    ];
+}
 
 function analyzeKeywords(text) {
 
@@ -161,41 +131,147 @@ function analyzeKeywords(text) {
     for (let word in keywords) {
         if (text.includes(word)) {
             found.push(word);
-            score += keywords[word];
+            score += keywords[word]; // ✅ weighted scoring
         }
     }
 
     return { score, found };
 }
 
+// ==============================
+// 🔹 DATASET ENGINE
+// ==============================
+// 🔹 SIMPLE SIMILARITY CHECK
+function calculateSimilarity(text1, text2) {
+
+    let stopWords = ["the", "is", "at", "on", "in", "and", "of", "to"];
+
+    let words1 = [...new Set(
+        text1.split(" ")
+        .filter(w => w.length > 2 && !stopWords.includes(w))
+    )];
+
+    let words2 = [...new Set(
+        text2.split(" ")
+        .filter(w => w.length > 2 && !stopWords.includes(w))
+    )];
+
+    let common = words1.filter(w => words2.includes(w));
+
+    return common.length / Math.max(words1.length, words2.length);
+}
 
 // ==============================
-// 🔹 DATASET (TF-IDF)
+// 🔹 TF-IDF ENGINE
 // ==============================
+
+function getAllWords(text) {
+    return text
+        .toLowerCase()
+        .replace(/[^\w\s]/g, "")
+        .split(" ")
+        .filter(w => w.length > 2);
+}
+
+// Build vocabulary
+function buildVocabulary(dataset) {
+    let vocab = new Set();
+
+    dataset.forEach(item => {
+        getAllWords(item.text).forEach(word => vocab.add(word));
+    });
+
+    return Array.from(vocab);
+}
+
+// Calculate IDF
+function calculateIDF(dataset, vocab) {
+    let idf = {};
+
+    vocab.forEach(word => {
+        let count = 0;
+
+        dataset.forEach(item => {
+            if (getAllWords(item.text).includes(word)) {
+                count++;
+            }
+        });
+
+        idf[word] = Math.log(dataset.length / (count + 1));
+    });
+
+    return idf;
+}
+
+// TF vector
+function getTF(text) {
+    let words = getAllWords(text);
+    let tf = {};
+
+    words.forEach(word => {
+        tf[word] = (tf[word] || 0) + 1;
+    });
+
+    return tf;
+}
+
+// TF-IDF vector
+function getTFIDF(tf, idf) {
+    let tfidf = {};
+
+    for (let word in tf) {
+        tfidf[word] = tf[word] * (idf[word] || 0);
+    }
+
+    return tfidf;
+}
+
+// Cosine similarity
+function cosineSimilarity(vec1, vec2) {
+    let dot = 0;
+    let mag1 = 0;
+    let mag2 = 0;
+
+    let words = new Set([...Object.keys(vec1), ...Object.keys(vec2)]);
+
+    words.forEach(word => {
+        let v1 = vec1[word] || 0;
+        let v2 = vec2[word] || 0;
+
+        dot += v1 * v2;
+        mag1 += v1 * v1;
+        mag2 += v2 * v2;
+    });
+
+    return dot / (Math.sqrt(mag1) * Math.sqrt(mag2) || 1);
+}
+
 
 function analyzeDataset(text) {
 
-    let inputTF = getTF(text);
-    let inputVector = getTFIDF(inputTF, idfValues);
+    text = text.toLowerCase().replace(/[^\w\s]/g, "");
 
-    let bestSimilarity = 0;
     let matchItem = null;
     let score = 0;
+    let bestSimilarity = 0;
 
-    datasetVectors.forEach((vec, index) => {
+    dataset.forEach(item => {
 
-        let similarity = cosineSimilarity(inputVector, vec);
+        let cleanItemText = item.text.toLowerCase().replace(/[^\w\s]/g, "");
 
-        if (similarity > bestSimilarity) {
+        let similarity = calculateSimilarity(text, cleanItemText);
+
+        if (similarity > 0.4 && similarity > bestSimilarity) {
             bestSimilarity = similarity;
-            matchItem = dataset[index];
+            matchItem = item;
         }
     });
 
+    // 🔥 scoring based on similarity
     if (matchItem) {
-        if (bestSimilarity > 0.5) {
+        if (bestSimilarity > 0.6) {
             score += matchItem.label === "fake" ? 3 : -2;
-        } else if (bestSimilarity > 0.3) {
+        } else {
             score += matchItem.label === "fake" ? 2 : -1;
         }
     }
@@ -203,13 +279,13 @@ function analyzeDataset(text) {
     return { matchItem, score };
 }
 
-
 // ==============================
-// 🔹 CONFIDENCE
+// 🔹 CONFIDENCE CALCULATOR
 // ==============================
 
 function calculateConfidence(score) {
-    if (score <= 0) return 60;
+
+    if (score <= 0) return 60;   // real but not 0%
     if (score >= 6) return 95;
 
     return Math.min(60 + score * 10, 95);
@@ -217,17 +293,19 @@ function calculateConfidence(score) {
 
 
 // ==============================
-// 🔹 DECISION ENGINE
+// 🔹 RESULT DECISION ENGINE
 // ==============================
 
 function decideResult(score, datasetMatch) {
 
+    // 🔥 dataset should NOT blindly decide
     if (datasetMatch) {
 
         if (datasetMatch.label === "fake") {
             return { text: "❌ Fake (Dataset Match)", className: "fake" };
         }
 
+        // ⚠️ if dataset says real, still check score
         if (score >= 3) {
             return { text: "⚠️ Suspicious (Conflicting Data)", className: "warn" };
         }
@@ -235,63 +313,124 @@ function decideResult(score, datasetMatch) {
         return { text: "✅ Looks Real (Dataset Match)", className: "real" };
     }
 
-    if (score >= 6) return { text: "❌ Highly Likely Fake", className: "fake" };
-    if (score >= 3) return { text: "⚠️ Suspicious Content", className: "warn" };
+    // 🔥 normal scoring
+    if (score >= 6) {
+        return { text: "❌ Highly Likely Fake", className: "fake" };
+    }
+
+    if (score >= 3) {
+        return { text: "⚠️ Suspicious Content", className: "warn" };
+    }
 
     return { text: "✅ Looks Real", className: "real" };
 }
 
 
 // ==============================
-// 🔹 UI HELPERS
+// 🔹 TEXT HIGHLIGHTER
 // ==============================
 
-function getTextInput() {
-    return document.getElementById("newsText").value.toLowerCase();
-}
-
-function getResultBox() {
-    return document.getElementById("resultBox");
+function highlightWords(text, words) {
+    words.forEach(word => {
+        let regex = new RegExp(`(${word})`, "gi");
+        text = text.replace(regex, `<span style="color:red; font-weight:bold;">$1</span>`);
+    });
+    return text;
 }
 
 
 // ==============================
-// 🔹 MAIN FUNCTION
+// 🔹 PROGRESS BAR UPDATE
+// ==============================
+
+function updateProgress(confidence) {
+    let bar = getProgressBar();
+    bar.style.width = confidence + "%";
+}
+
+
+// ==============================
+// 🔹 DISPLAY RESULT
+// ==============================
+
+function displayResult(result, confidence, words, text) {
+    let box = getResultBox();
+
+    let highlighted = highlightWords(text, words);
+
+    box.className = result.className;
+    box.innerHTML = `
+        <h3>${result.text}</h3>
+        <p><strong>Confidence:</strong> ${confidence}%</p>
+        <p><strong>Trigger Words:</strong> ${words.join(", ") || "None"}</p>
+        <hr>
+        <p>${highlighted}</p>
+    `;
+}
+
+
+// ==============================
+// 🔹 MAIN CONTROLLER
 // ==============================
 
 function checkNews() {
 
-    let box = getResultBox();
-    box.innerHTML = "⏳ Analyzing...";
+    showLoading();
 
     setTimeout(() => {
 
         let text = getTextInput();
 
-        if (!isLoaded) {
-            box.innerHTML = "Dataset not loaded!";
+        let error = validateInput(text);
+        if (error) {
+            getResultBox().innerHTML = `<p>${error}</p>`;
             return;
         }
 
-        if (!text.trim()) {
-            box.innerHTML = "Enter text!";
-            return;
-        }
-
+        // 🔍 Analyze
         let keywordData = analyzeKeywords(text);
         let datasetData = analyzeDataset(text);
 
         let totalScore = keywordData.score + datasetData.score;
 
         let confidence = calculateConfidence(totalScore);
+
         let result = decideResult(totalScore, datasetData.matchItem);
 
-        box.className = result.className;
-        box.innerHTML = `
-            <h3>${result.text}</h3>
-            <p>Confidence: ${confidence}%</p>
-            <p>Trigger Words: ${keywordData.found.join(", ") || "None"}</p>
-        `;
+        updateProgress(confidence);
 
-    }, 500);
+        displayResult(
+            result,
+            confidence,
+            keywordData.found,
+            text
+        );
+
+    }, 800);
 }
+
+
+// ==============================
+// 🔹 OPTIONAL: AUTO CLEAR TIMER
+// ==============================
+
+function autoClear() {
+    setTimeout(() => {
+        clearText();
+    }, 10000);
+}
+
+
+// ==============================
+// 🔹 OPTIONAL: ENTER KEY SUPPORT
+// ==============================
+
+document.addEventListener("DOMContentLoaded", () => {
+    let textarea = document.getElementById("newsText");
+
+    textarea.addEventListener("keypress", function (e) {
+        if (e.key === "Enter" && e.ctrlKey) {
+            checkNews();
+        }
+    });
+});
