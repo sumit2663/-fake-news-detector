@@ -353,19 +353,27 @@ function updateProgress(confidence) {
 // 🔹 DISPLAY RESULT
 // ==============================
 
-function displayResult(result, confidence, words, text) {
+function displayResult(result, confidence, words, text, datasetData) {
     let box = getResultBox();
+    let matchedText = datasetData?.matchItem?.text || "No close match found";
 
     let highlighted = highlightWords(text, words);
 
     box.className = result.className;
     box.innerHTML = `
-        <h3>${result.text}</h3>
-        <p><strong>Confidence:</strong> ${confidence}%</p>
-        <p><strong>Trigger Words:</strong> ${words.join(", ") || "None"}</p>
-        <hr>
-        <p>${highlighted}</p>
-    `;
+    <h3>${result.text}</h3>
+    <p><strong>Confidence:</strong> ${confidence}%</p>
+    <p><strong>Trigger Words:</strong> ${words.join(", ") || "None"}</p>
+
+    <hr>
+
+    <p><strong>Closest Match:</strong></p>
+    <p style="opacity:0.7">${matchedText}</p>
+
+    <hr>
+
+    <p>${highlighted}</p>
+`;
 }
 
 
@@ -403,8 +411,9 @@ function checkNews() {
             result,
             confidence,
             keywordData.found,
-            text
-        );
+            text,
+            datasetData   // MUST be passed
+            );
 
     }, 800);
 }
