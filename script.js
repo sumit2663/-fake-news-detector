@@ -464,6 +464,7 @@ function autoClear() {
 // ==============================
 
 document.addEventListener("DOMContentLoaded", () => {
+
     let textarea = document.getElementById("newsText");
 
     textarea.addEventListener("keypress", function (e) {
@@ -471,17 +472,19 @@ document.addEventListener("DOMContentLoaded", () => {
             checkNews();
         }
     });
+
+    // ✅ MOVE PARTICLES HERE
+    const particlesContainer = document.querySelector(".particles");
+
+    if (particlesContainer) {
+        for (let i = 0; i < 40; i++) {
+            let span = document.createElement("span");
+
+            span.style.left = Math.random() * 100 + "vw";
+            span.style.animationDuration = (5 + Math.random() * 10) + "s";
+
+            particlesContainer.appendChild(span);
+        }
+    }
+
 });
-
-const particlesContainer = document.querySelector(".particles");
-
-if (particlesContainer) {
-  for (let i = 0; i < 40; i++) {
-    let span = document.createElement("span");
-
-    span.style.left = Math.random() * 100 + "vw";
-    span.style.animationDuration = (5 + Math.random() * 10) + "s";
-
-    particlesContainer.appendChild(span);
-  }
-}
