@@ -90,10 +90,18 @@ function validateInput(text) {
 
 function getKeywords() {
     return [
-        "shocking", "100% cure", "guarantee",
-        "secret", "breaking", "click here",
-        "viral", "urgent", "limited time",
-        "exclusive", "miracle", "unbelievable"
+        "shocking",
+        "fake",
+        "rumor",
+        "unverified",
+        "conspiracy",
+        "leak",
+        "secret",
+        "viral",
+        "breaking",
+        "urgent",
+        "limited time",
+        "click here"
     ];
 }
 
