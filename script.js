@@ -141,25 +141,39 @@ function analyzeKeywords(text) {
 // ==============================
 // 🔹 DATASET ENGINE
 // ==============================
+// 🔹 SIMPLE SIMILARITY CHECK
+function calculateSimilarity(text1, text2) {
+    let words1 = text1.split(" ");
+    let words2 = text2.split(" ");
+
+    let common = words1.filter(w => words2.includes(w));
+
+    return common.length / Math.max(words1.length, words2.length);
+}
 
 function analyzeDataset(text) {
     let matchItem = null;
     let score = 0;
+    let bestSimilarity = 0;
 
     dataset.forEach(item => {
-        let words = item.text.toLowerCase().split(" ");
-        let matches = words.filter(w => text.includes(w)).length;
+        let similarity = calculateSimilarity(text, item.text.toLowerCase());
 
-        if (matches >= 3) {
-
-            let ratio = matches / words.length;
-
-            if (ratio > 0.5) {
-                matchItem = item;
-                score += item.label === "fake" ? 2 : -1;
-            }
+        // 🔥 strong similarity match
+        if (similarity > 0.4 && similarity > bestSimilarity) {
+            bestSimilarity = similarity;
+            matchItem = item;
         }
     });
+
+    // 🔥 scoring based on similarity
+    if (matchItem) {
+        if (bestSimilarity > 0.6) {
+            score += matchItem.label === "fake" ? 3 : -2;
+        } else if (bestSimilarity > 0.4) {
+            score += matchItem.label === "fake" ? 2 : -1;
+        }
+    }
 
     return { matchItem, score };
 }
