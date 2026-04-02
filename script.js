@@ -180,12 +180,22 @@ function calculateConfidence(score) {
 
 function decideResult(score, datasetMatch) {
 
+    // 🔥 dataset should NOT blindly decide
     if (datasetMatch) {
-        return datasetMatch.label === "fake"
-            ? { text: "❌ Fake (Dataset Match)", className: "fake" }
-            : { text: "⚠️ Possibly Real (Dataset Match)", className: "warn" };
+
+        if (datasetMatch.label === "fake") {
+            return { text: "❌ Fake (Dataset Match)", className: "fake" };
+        }
+
+        // ⚠️ if dataset says real, still check score
+        if (score >= 3) {
+            return { text: "⚠️ Suspicious (Conflicting Data)", className: "warn" };
+        }
+
+        return { text: "✅ Looks Real (Dataset Match)", className: "real" };
     }
 
+    // 🔥 normal scoring
     if (score >= 6) {
         return { text: "❌ Highly Likely Fake", className: "fake" };
     }
