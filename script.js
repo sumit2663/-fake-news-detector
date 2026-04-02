@@ -161,6 +161,92 @@ function calculateSimilarity(text1, text2) {
     return common.length / Math.max(words1.length, words2.length);
 }
 
+// ==============================
+// 🔹 TF-IDF ENGINE
+// ==============================
+
+function getAllWords(text) {
+    return text
+        .toLowerCase()
+        .replace(/[^\w\s]/g, "")
+        .split(" ")
+        .filter(w => w.length > 2);
+}
+
+// Build vocabulary
+function buildVocabulary(dataset) {
+    let vocab = new Set();
+
+    dataset.forEach(item => {
+        getAllWords(item.text).forEach(word => vocab.add(word));
+    });
+
+    return Array.from(vocab);
+}
+
+// Calculate IDF
+function calculateIDF(dataset, vocab) {
+    let idf = {};
+
+    vocab.forEach(word => {
+        let count = 0;
+
+        dataset.forEach(item => {
+            if (getAllWords(item.text).includes(word)) {
+                count++;
+            }
+        });
+
+        idf[word] = Math.log(dataset.length / (count + 1));
+    });
+
+    return idf;
+}
+
+// TF vector
+function getTF(text) {
+    let words = getAllWords(text);
+    let tf = {};
+
+    words.forEach(word => {
+        tf[word] = (tf[word] || 0) + 1;
+    });
+
+    return tf;
+}
+
+// TF-IDF vector
+function getTFIDF(tf, idf) {
+    let tfidf = {};
+
+    for (let word in tf) {
+        tfidf[word] = tf[word] * (idf[word] || 0);
+    }
+
+    return tfidf;
+}
+
+// Cosine similarity
+function cosineSimilarity(vec1, vec2) {
+    let dot = 0;
+    let mag1 = 0;
+    let mag2 = 0;
+
+    let words = new Set([...Object.keys(vec1), ...Object.keys(vec2)]);
+
+    words.forEach(word => {
+        let v1 = vec1[word] || 0;
+        let v2 = vec2[word] || 0;
+
+        dot += v1 * v2;
+        mag1 += v1 * v1;
+        mag2 += v2 * v2;
+    });
+
+    return dot / (Math.sqrt(mag1) * Math.sqrt(mag2) || 1);
+}
+
+
 function analyzeDataset(text) {
 
     text = text.toLowerCase().replace(/[^\w\s]/g, "");
