@@ -143,8 +143,18 @@ function analyzeKeywords(text) {
 // ==============================
 // 🔹 SIMPLE SIMILARITY CHECK
 function calculateSimilarity(text1, text2) {
-    let words1 = text1.split(" ").filter(w => w.length > 2);
-    let words2 = text2.split(" ").filter(w => w.length > 2);
+
+    let stopWords = ["the", "is", "at", "on", "in", "and", "of", "to"];
+
+    let words1 = [...new Set(
+        text1.split(" ")
+        .filter(w => w.length > 2 && !stopWords.includes(w))
+    )];
+
+    let words2 = [...new Set(
+        text2.split(" ")
+        .filter(w => w.length > 2 && !stopWords.includes(w))
+    )];
 
     let common = words1.filter(w => words2.includes(w));
 
