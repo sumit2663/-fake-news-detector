@@ -143,8 +143,8 @@ function analyzeKeywords(text) {
 // ==============================
 // 🔹 SIMPLE SIMILARITY CHECK
 function calculateSimilarity(text1, text2) {
-    let words1 = text1.split(" ");
-    let words2 = text2.split(" ");
+    let words1 = text1.split(" ").filter(w => w.length > 2);
+    let words2 = text2.split(" ").filter(w => w.length > 2);
 
     let common = words1.filter(w => words2.includes(w));
 
@@ -152,14 +152,19 @@ function calculateSimilarity(text1, text2) {
 }
 
 function analyzeDataset(text) {
+
+    text = text.toLowerCase().replace(/[^\w\s]/g, "");
+
     let matchItem = null;
     let score = 0;
     let bestSimilarity = 0;
 
     dataset.forEach(item => {
-        let similarity = calculateSimilarity(text, item.text.toLowerCase());
 
-        // 🔥 strong similarity match
+        let cleanItemText = item.text.toLowerCase().replace(/[^\w\s]/g, "");
+
+        let similarity = calculateSimilarity(text, cleanItemText);
+
         if (similarity > 0.4 && similarity > bestSimilarity) {
             bestSimilarity = similarity;
             matchItem = item;
@@ -170,14 +175,13 @@ function analyzeDataset(text) {
     if (matchItem) {
         if (bestSimilarity > 0.6) {
             score += matchItem.label === "fake" ? 3 : -2;
-        } else if (bestSimilarity > 0.4) {
+        } else {
             score += matchItem.label === "fake" ? 2 : -1;
         }
     }
 
     return { matchItem, score };
 }
-
 
 // ==============================
 // 🔹 CONFIDENCE CALCULATOR
