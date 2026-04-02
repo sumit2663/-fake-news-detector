@@ -53,10 +53,15 @@ function getProgressBar() {
 
 function clearText() {
     document.getElementById("newsText").value = "";
-    getResultBox().innerHTML = "<p>🧹 Cleared</p>";
-    getProgressBar().style.width = "0%";
-}
 
+    let box = getResultBox();
+    box.className = "";
+    box.innerHTML = "<p>🧹 Cleared</p>";
+
+    let bar = getProgressBar();
+    bar.style.width = "0%";
+    bar.style.background = "#22c55e"; // reset color
+}
 
 // ==============================
 // 🔹 LOADING UI
