@@ -367,6 +367,17 @@ function displayResult(result, confidence, words, text, datasetData) {
 
     let highlighted = highlightWords(text, words);
 
+    // ✅ ADD HERE
+    let message = "";
+
+    if (result.className === "fake") {
+        message = "This content shows strong signs of misinformation.";
+    } else if (result.className === "warn") {
+        message = "This content may be misleading. Verify before trusting.";
+    } else {
+        message = "No major issues detected. Looks reliable.";
+    }
+
     box.className = result.className;
     box.innerHTML = `
     <h3 class="result-title">${result.text}</h3>
@@ -384,6 +395,9 @@ function displayResult(result, confidence, words, text, datasetData) {
       <p class="match-title">Closest Match</p>
       <p class="match-text">${matchedText}</p>
     </div>
+
+    <!-- ✅ ADD HERE -->
+    <p style="margin-top:10px; opacity:0.85">${message}</p>
 
     <hr>
 
