@@ -183,11 +183,16 @@ function decideResult(score, datasetMatch) {
     if (datasetMatch) {
         return datasetMatch.label === "fake"
             ? { text: "❌ Fake (Dataset Match)", className: "fake" }
-            : { text: "✅ Real (Dataset Match)", className: "real" };
+            : { text: "⚠️ Possibly Real (Dataset Match)", className: "warn" };
     }
 
-    if (score >= 2) return { text: "❌ Likely Fake News", className: "fake" };
-    if (score === 1) return { text: "⚠️ Suspicious Content", className: "warn" };
+    if (score >= 6) {
+        return { text: "❌ Highly Likely Fake", className: "fake" };
+    }
+
+    if (score >= 3) {
+        return { text: "⚠️ Suspicious Content", className: "warn" };
+    }
 
     return { text: "✅ Looks Real", className: "real" };
 }
