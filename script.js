@@ -198,7 +198,11 @@ function analyzeDataset(text) {
 // ==============================
 
 function calculateConfidence(score) {
-    return Math.min(score * 25, 95);
+
+    if (score <= 0) return 60;   // real but not 0%
+    if (score >= 6) return 95;
+
+    return Math.min(60 + score * 10, 95);
 }
 
 
