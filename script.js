@@ -434,3 +434,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
+
+const particlesContainer = document.querySelector(".particles");
+
+if (particlesContainer) {
+  for (let i = 0; i < 40; i++) {
+    let span = document.createElement("span");
+
+    span.style.left = Math.random() * 100 + "vw";
+    span.style.animationDuration = (5 + Math.random() * 10) + "s";
+
+    particlesContainer.appendChild(span);
+  }
+}
