@@ -363,7 +363,12 @@ function displayResult(result, confidence, words, text, datasetData) {
     box.innerHTML = `
     <h3>${result.text}</h3>
     <p><strong>Confidence:</strong> ${confidence}%</p>
-   <p><strong>Trigger Words:</strong> ${words.length ? words.join(", ") : "None"}</p>
+
+    <p><strong>Trigger Words:</strong> ${
+      words.length 
+        ? words.map(w => `<span class="tag">${w}</span>`).join(" ") 
+        : "None"
+    }</p>
 
     <hr>
 
