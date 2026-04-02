@@ -183,6 +183,7 @@ button:active {
   height: 100%;
   width: 0%;
   background: linear-gradient(90deg, #22c55e, #4ade80);
+  box-shadow: 0 0 10px #22c55e;
   transition: width 0.6s ease;
 }
 
