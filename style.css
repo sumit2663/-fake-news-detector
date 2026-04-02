@@ -14,11 +14,19 @@
 
 body {
   font-family: 'Poppins', sans-serif;
-  background: linear-gradient(135deg, #0f172a, #1e293b, #020617);
+  background: linear-gradient(-45deg, #0f172a, #1e293b, #020617, #1e3a8a);
+  background-size: 400% 400%;
+  animation: gradientMove 12s ease infinite;
   color: white;
   text-align: center;
   padding: 40px;
   overflow-x: hidden;
+}
+
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 /* =========================================
@@ -270,4 +278,36 @@ button:hover {
 /* Smooth transitions */
 * {
   transition: all 0.2s ease-in-out;
+}
+
+/* =========================================
+   ✨ PARTICLES BACKGROUND
+========================================= */
+
+.particles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.particles span {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 50%;
+  animation: floatParticles linear infinite;
+}
+
+@keyframes floatParticles {
+  from {
+    transform: translateY(100vh) scale(0);
+  }
+  to {
+    transform: translateY(-10vh) scale(1);
+  }
 }
