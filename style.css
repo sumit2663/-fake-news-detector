@@ -83,12 +83,22 @@ textarea {
   outline: none;
   resize: none;
   transition: 0.3s;
+
+  /* 🔥 ADD HERE */
+  background: rgba(255,255,255,0.9);
+  color: black;
+  caret-color: #22c55e; /* ✅ ADD THIS LINE */
+}
+
+textarea::placeholder {
+  color: #666;
 }
 
 /* Focus glow */
 textarea:focus {
   box-shadow: 0 0 20px #22c55e;
   transform: scale(1.01);
+  background: white;
 }
 
 /* =========================================
