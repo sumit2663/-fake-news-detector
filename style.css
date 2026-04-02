@@ -290,9 +290,10 @@ footer {
 }
 
 button:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 15px #22c55e, 0 0 30px #22c55e;
   animation: glow 1s infinite;
 }
-
 /* Smooth transitions */
 * {
   transition: all 0.2s ease-in-out;
