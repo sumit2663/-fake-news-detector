@@ -106,20 +106,37 @@ function getKeywords() {
 }
 
 function analyzeKeywords(text) {
-    let keywords = getKeywords();
+
+    let keywords = {
+        "shocking": 2,
+        "fake": 3,
+        "rumor": 3,
+        "unverified": 3,
+        "conspiracy": 3,
+        "leak": 2,
+        "secret": 2,
+        "viral": 1,
+        "breaking": 1,
+        "urgent": 2,
+        "limited time": 3,
+        "click here": 3,
+        "100% cure": 5,
+        "guarantee": 4,
+        "miracle": 4
+    };
+
     let found = [];
     let score = 0;
 
-    keywords.forEach(word => {
+    for (let word in keywords) {
         if (text.includes(word)) {
             found.push(word);
-            score++;
+            score += keywords[word]; // ✅ weighted scoring
         }
-    });
+    }
 
     return { score, found };
 }
-
 
 // ==============================
 // 🔹 DATASET ENGINE
