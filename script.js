@@ -343,9 +343,17 @@ function highlightWords(text, words) {
 // 🔹 PROGRESS BAR UPDATE
 // ==============================
 
-function updateProgress(confidence) {
+function updateProgress(confidence, resultClass) {
     let bar = getProgressBar();
     bar.style.width = confidence + "%";
+
+    if (resultClass === "fake") {
+        bar.style.background = "#dc2626";
+    } else if (resultClass === "warn") {
+        bar.style.background = "#ca8a04";
+    } else {
+        bar.style.background = "#22c55e";
+    }
 }
 
 
@@ -412,7 +420,7 @@ function checkNews() {
 
         let result = decideResult(totalScore, datasetData.matchItem);
 
-        updateProgress(confidence);
+        updateProgress(confidence, result.className);
 
         displayResult(
             result,
