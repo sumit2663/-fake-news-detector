@@ -126,8 +126,13 @@ function analyzeDataset(text) {
         let matches = words.filter(w => text.includes(w)).length;
 
         if (matches >= 3) {
-            matchItem = item;
-            score += item.label === "fake" ? 2 : -1;
+
+            let ratio = matches / words.length;
+
+            if (ratio > 0.5) {
+                matchItem = item;
+                score += item.label === "fake" ? 2 : -1;
+            }
         }
     });
 
