@@ -369,7 +369,7 @@ function displayResult(result, confidence, words, text, datasetData) {
 
     box.className = result.className;
     box.innerHTML = `
-    <h3>${result.text}</h3>
+    <h3 class="result-title">${result.text}</h3>
     <p><strong>Confidence:</strong> ${confidence}%</p>
 
     <p><strong>Trigger Words:</strong> ${
