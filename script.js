@@ -88,6 +88,11 @@ function validateInput(text) {
     return null;
 }
 
+function detectInputType(text) {
+    if (text.length < 30) return "Short statement";
+    if (text.includes("http")) return "Link-based news";
+    return "Full news content";
+}
 
 // ==============================
 // 🔹 KEYWORD ENGINE
@@ -434,6 +439,7 @@ function displayResult(result, confidence, words, text, datasetData, keywordData
     box.innerHTML = `
     <h3 class="result-title">${result.text}</h3>
     <p><strong>Confidence:</strong> ${confidence}%</p>
+    <p><strong>Type:</strong> ${detectInputType(text)}</p>
     
     <!-- ✅ ADD METER HERE -->
     <div class="meter">
