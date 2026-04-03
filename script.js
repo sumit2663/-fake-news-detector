@@ -286,6 +286,10 @@ function analyzeDataset(text) {
 
 // ✅ ADD HERE 👇
 function analyzeAll(text) {
+
+    // ✅ ADD HERE (first line)
+    console.log("🔥 analyzeAll running");
+
     let keywordData = analyzeKeywords(text);
     let datasetData = analyzeDataset(text);
 
@@ -432,16 +436,22 @@ function displayResult(result, confidence, words, text, datasetData, keywordData
     
     <!-- ✅ ADD HERE -->
     <p><strong>Why this result:</strong></p>
-    <ul>
+    <ul style="text-align:left; opacity:0.8; margin-top:5px;">
     ${reasons.map(r => `<li>${r}</li>`).join("")}
     </ul>
     
     <hr>
 
     <div class="match-box">
-      <p class="match-title">Closest Match</p>
-      <p class="match-text">${matchedText}</p>
-    </div>
+    <p class="match-title">Top Matches</p>
+    <ul style="text-align:left; opacity:0.8; margin-top:5px;">
+    ${datasetData.topMatches?.map(m => `
+      <li style="opacity:0.7">
+        (${Math.round(m.similarity * 100)}%) ${m.text}
+      </li>
+    `).join("") || "<li>No matches found</li>"}
+  </ul>
+</div>
 
     <!-- ✅ ADD HERE -->
     <p style="margin-top:10px; opacity:0.85">${message}</p>
