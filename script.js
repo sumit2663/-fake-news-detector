@@ -395,6 +395,13 @@ function displayResult(result, confidence, words, text, datasetData, keywordData
     let matchedText = datasetData?.matchItem?.text || "No close match found";
 
     let highlighted = highlightWords(text, words);
+    
+    // ✅ ADD HERE
+    let meterColor = result.className === "fake"
+        ? "#dc2626"
+        : result.className === "warn"
+        ? "#ca8a04"
+        : "#22c55e";
 
     // ✅ ADD HERE
     let message = "";
@@ -427,7 +434,14 @@ function displayResult(result, confidence, words, text, datasetData, keywordData
     box.innerHTML = `
     <h3 class="result-title">${result.text}</h3>
     <p><strong>Confidence:</strong> ${confidence}%</p>
-
+    
+    <!-- ✅ ADD METER HERE -->
+    <div class="meter">
+      <div class="fake-meter" 
+           style="width:${Math.max(0, confidence)}%; background:${meterColor}">
+      </div>
+    </div>
+    
     <p><strong>Trigger Words:</strong> ${
         words.length 
         ? words.map(w => `<span class="tag">${w}</span>`).join(" ") 
