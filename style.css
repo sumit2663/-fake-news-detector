@@ -171,12 +171,13 @@ button:hover::after {
   padding: 25px;
   border-radius: 15px;
   font-size: 18px;
-  transition: 0.5s;
 
-  /* 👇 ADD HERE (same line or below) */
+  /* ✅ FIX THIS */
+  transition: opacity 0.4s ease;
+
+  /* keep animation */
   animation: fadeIn 0.5s ease, pop 0.4s ease;
 }
-
 /* =========================================
    🎯 RESULT COLORS
 ========================================= */
