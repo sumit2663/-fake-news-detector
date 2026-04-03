@@ -178,6 +178,18 @@ button:hover::after {
   /* keep animation */
   animation: fadeIn 0.5s ease, pop 0.4s ease;
 }
+
+/* ✅ ADD HERE */
+#resultBox ul {
+  text-align: left;
+  margin-left: 20px;
+  opacity: 0.85;
+}
+
+/* ✅ ADD HERE */
+#resultBox li {
+  margin: 5px 0;
+}
 /* =========================================
    🎯 RESULT COLORS
 ========================================= */
