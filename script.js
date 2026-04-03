@@ -337,9 +337,15 @@ function decideResult(score, datasetMatch) {
 
 function highlightWords(text, words) {
     words.forEach(word => {
-        let regex = new RegExp(`(${word})`, "gi");
+
+        // ✅ make word safe for regex
+        let safeWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        let regex = new RegExp(`(${safeWord})`, "gi");
+
         text = text.replace(regex, `<span style="color:red; font-weight:bold;">$1</span>`);
     });
+
     return text;
 }
 
@@ -384,6 +390,7 @@ function displayResult(result, confidence, words, text, datasetData) {
     }
 
     box.className = result.className;
+    box.style.opacity = "0";
     box.innerHTML = `
     <h3 class="result-title">${result.text}</h3>
     <p><strong>Confidence:</strong> ${confidence}%</p>
@@ -408,8 +415,12 @@ function displayResult(result, confidence, words, text, datasetData) {
 
     <p>${highlighted}</p>
 `;
+    
+// ✅ AND THIS RIGHT AFTER innerHTML
+    setTimeout(() => {
+        box.style.opacity = "1";
+    }, 50);
 }
-
 
 // ==============================
 // 🔹 MAIN CONTROLLER
