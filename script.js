@@ -284,6 +284,20 @@ function analyzeDataset(text) {
     return { matchItem, score };
 }
 
+// ✅ ADD HERE 👇
+function analyzeAll(text) {
+    let keywordData = analyzeKeywords(text);
+    let datasetData = analyzeDataset(text);
+
+    let totalScore = keywordData.score + datasetData.score;
+
+    return {
+        keywordData,
+        datasetData,
+        totalScore
+    };
+}
+
 // ==============================
 // 🔹 CONFIDENCE CALCULATOR
 // ==============================
@@ -372,7 +386,7 @@ function updateProgress(confidence, resultClass) {
 // 🔹 DISPLAY RESULT
 // ==============================
 
-function displayResult(result, confidence, words, text, datasetData) {
+function displayResult(result, confidence, words, text, datasetData, keywordData) {
     let box = getResultBox();
     let matchedText = datasetData?.matchItem?.text || "No close match found";
 
@@ -389,6 +403,21 @@ function displayResult(result, confidence, words, text, datasetData) {
         message = "No major issues detected. Looks reliable.";
     }
 
+     // ✅ 👉 ADD REASONS HERE (THIS IS THE CORRECT POSITION)
+    let reasons = [];
+
+    if (keywordData?.score > 0) {
+        reasons.push("Suspicious keywords detected");
+    }
+
+    if (datasetData?.matchItem) {
+        reasons.push("Similar news found in dataset");
+    }
+
+    if (reasons.length === 0) {
+        reasons.push("No strong fake signals detected");
+    }
+
     box.className = result.className;
     box.style.opacity = "0";
     box.innerHTML = `
@@ -396,11 +425,17 @@ function displayResult(result, confidence, words, text, datasetData) {
     <p><strong>Confidence:</strong> ${confidence}%</p>
 
     <p><strong>Trigger Words:</strong> ${
-      words.length 
+        words.length 
         ? words.map(w => `<span class="tag">${w}</span>`).join(" ") 
         : "None"
     }</p>
-
+    
+    <!-- ✅ ADD HERE -->
+    <p><strong>Why this result:</strong></p>
+    <ul>
+    ${reasons.map(r => `<li>${r}</li>`).join("")}
+    </ul>
+    
     <hr>
 
     <div class="match-box">
@@ -441,10 +476,11 @@ function checkNews() {
         }
 
         // 🔍 Analyze
-        let keywordData = analyzeKeywords(text);
-        let datasetData = analyzeDataset(text);
-
-        let totalScore = keywordData.score + datasetData.score;
+        let analysis = analyzeAll(text);
+        
+        let keywordData = analysis.keywordData;
+        let datasetData = analysis.datasetData;
+        let totalScore = analysis.totalScore;
 
         let confidence = calculateConfidence(totalScore);
 
@@ -452,13 +488,14 @@ function checkNews() {
 
         updateProgress(confidence, result.className);
 
-        displayResult(
-            result,
-            confidence,
-            keywordData.found,
-            text,
-            datasetData   // MUST be passed
-            );
+       displayResult(
+           result,
+           confidence,
+           keywordData.found,
+           text,
+           datasetData,
+           keywordData   // ✅ ADD THIS
+        );
 
     }, 800);
 }
