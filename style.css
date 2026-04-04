@@ -1,15 +1,20 @@
 /* =========================================
-   🔥 GLOBAL RESET
+   GLOBAL RESET
 ========================================= */
 
-* {
+*, *::before, *::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  /* FIX: replaced "transition: all 0.2s" with specific props only
+     so it no longer fights the glow keyframe on buttons */
+  transition: transform 0.2s ease, box-shadow 0.2s ease,
+              opacity 0.3s ease, background-color 0.2s ease,
+              border-color 0.2s ease, width 0.6s ease;
 }
 
 /* =========================================
-   🌌 BODY BACKGROUND
+   BODY — animated gradient background
 ========================================= */
 
 body {
@@ -19,18 +24,19 @@ body {
   animation: gradientMove 12s ease infinite;
   color: white;
   text-align: center;
-  padding: 40px;
+  padding: 40px 20px;
+  min-height: 100vh;
   overflow-x: hidden;
 }
 
 @keyframes gradientMove {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
 
 /* =========================================
-   🧊 GLASS CONTAINER
+   GLASS CONTAINER — with float animation
 ========================================= */
 
 .container {
@@ -39,27 +45,29 @@ body {
   padding: 30px;
   border-radius: 20px;
   backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
   background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 0 40px rgba(0,0,0,0.5);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
   animation: float 5s ease-in-out infinite;
 }
 
-/* =========================================
-   ✨ FLOAT ANIMATION
-========================================= */
-
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  0%   { transform: translateY(0px); }
+  50%  { transform: translateY(-6px); }
   100% { transform: translateY(0px); }
 }
 
 /* =========================================
-   🏷️ HEADER
+   HEADER
 ========================================= */
+
+header {
+  margin-bottom: 20px;
+}
 
 header h1 {
   font-size: 2.5rem;
+  font-weight: 700;
   margin-bottom: 10px;
   text-shadow: 0 0 10px #22c55e;
 }
@@ -70,7 +78,20 @@ header p {
 }
 
 /* =========================================
-   📝 TEXTAREA
+   SECTION HEADINGS
+========================================= */
+
+.input-section h2,
+.result-section h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  opacity: 0.85;
+  text-align: left;
+}
+
+/* =========================================
+   TEXTAREA
 ========================================= */
 
 textarea {
@@ -79,74 +100,70 @@ textarea {
   border-radius: 15px;
   padding: 15px;
   font-size: 16px;
-  border: none;
+  font-family: 'Poppins', sans-serif;
+  border: 2px solid transparent;
   outline: none;
   resize: none;
-  transition: 0.3s;
-
-  /* 🔥 ADD HERE */
-  background: rgba(255,255,255,0.9);
+  background: rgba(255, 255, 255, 0.9);
   color: black;
-  caret-color: #22c55e; /* ✅ ADD THIS LINE */
+  caret-color: #22c55e;
+  line-height: 1.6;
 }
 
 textarea::placeholder {
   color: #666;
 }
 
-/* Focus glow */
 textarea:focus {
+  border-color: #22c55e;
   box-shadow: 0 0 20px #22c55e;
-  transform: scale(1.01);
   background: white;
 }
 
 /* =========================================
-   🔘 BUTTON GROUP
+   BUTTON GROUP
 ========================================= */
 
 .button-group {
   margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
 }
 
-/* ✅ MAIN BUTTON STYLE */
+/* =========================================
+   BUTTONS — glow pulse RESTORED & FIXED
+========================================= */
+
 button {
   padding: 12px 25px;
   border-radius: 12px;
   border: none;
-  margin: 10px;
   font-size: 16px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
   cursor: pointer;
-  transition: 0.3s;
-
-  position: relative;   /* needed for overlay */
-  overflow: hidden;     /* keeps effect inside */
-}
-
-/* Primary button */
-button {
+  position: relative;
+  overflow: hidden;
   background: linear-gradient(45deg, #22c55e, #4ade80);
   color: white;
 }
 
-/* Secondary button */
 button.secondary {
   background: #334155;
+  color: rgba(255,255,255,0.85);
 }
 
-/* Hover */
 button:hover {
   transform: scale(1.08);
-  box-shadow: 0 0 15px #22c55e, 0 0 30px #22c55e;
-  animation: glow 1s infinite;
+  animation: glowPulse 1s infinite;
 }
 
-/* Click */
 button:active {
   transform: scale(0.95);
+  animation: none;
 }
 
-/* ✨ LIGHT SWEEP EFFECT */
 button::after {
   content: "";
   position: absolute;
@@ -154,63 +171,24 @@ button::after {
   height: 100%;
   left: 0;
   top: 0;
-  background: rgba(255,255,255,0.2);
-  transition: 0.3s;
+  background: rgba(255, 255, 255, 0.2);
+  transition: width 0.3s ease;
 }
 
 button:hover::after {
   width: 100%;
 }
 
-/* =========================================
-   📦 RESULT BOX
-========================================= */
-
-#resultBox {
-  margin-top: 30px;
-  padding: 25px;
-  border-radius: 15px;
-  font-size: 18px;
-
-  /* ✅ FIX THIS */
-  transition: opacity 0.4s ease;
-
-  /* keep animation */
-  animation: fadeIn 0.5s ease, pop 0.4s ease;
-}
-
-/* ✅ ADD HERE */
-#resultBox ul {
-  text-align: left;
-  margin-left: 20px;
-  opacity: 0.85;
-}
-
-/* ✅ ADD HERE */
-#resultBox li {
-  margin: 5px 0;
-}
-/* =========================================
-   🎯 RESULT COLORS
-========================================= */
-
-.real {
-  background: rgba(22, 163, 74, 0.8);
-  box-shadow: 0 0 20px #16a34a;
-}
-
-.fake {
-  background: rgba(220, 38, 38, 0.8);
-  box-shadow: 0 0 20px #dc2626;
-}
-
-.warn {
-  background: rgba(202, 138, 4, 0.8);
-  box-shadow: 0 0 20px #ca8a04;
+/* FIXED: renamed to glowPulse, only animates box-shadow so transition:all
+   conflict is gone and the pulse works cleanly */
+@keyframes glowPulse {
+  0%   { box-shadow: 0 0 5px #22c55e; }
+  50%  { box-shadow: 0 0 25px #22c55e, 0 0 50px #22c55e; }
+  100% { box-shadow: 0 0 5px #22c55e; }
 }
 
 /* =========================================
-   📊 PROGRESS BAR
+   PROGRESS BAR
 ========================================= */
 
 .progress-container {
@@ -227,11 +205,77 @@ button:hover::after {
   width: 0%;
   background: linear-gradient(90deg, #22c55e, #4ade80);
   box-shadow: 0 0 10px #22c55e;
-  transition: width 0.6s ease;
+  border-radius: 10px;
 }
 
 /* =========================================
-   ⚖️ FAKE VS REAL METER
+   RESULT BOX
+========================================= */
+
+.result-section {
+  text-align: left;
+}
+
+#resultBox {
+  margin-top: 30px;
+  padding: 25px;
+  border-radius: 15px;
+  font-size: 18px;
+  min-height: 70px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+#resultBox.real,
+#resultBox.fake,
+#resultBox.warn {
+  animation: popIn 0.45s ease;
+}
+
+#resultBox.real {
+  background: rgba(22, 163, 74, 0.8);
+  box-shadow: 0 0 20px #16a34a;
+}
+
+#resultBox.fake {
+  background: rgba(220, 38, 38, 0.8);
+  box-shadow: 0 0 20px #dc2626;
+}
+
+#resultBox.warn {
+  background: rgba(202, 138, 4, 0.8);
+  box-shadow: 0 0 20px #ca8a04;
+}
+
+@keyframes popIn {
+  0%   { transform: scale(0.92); opacity: 0; }
+  60%  { transform: scale(1.02); }
+  100% { transform: scale(1);    opacity: 1; }
+}
+
+#resultBox .result-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+#resultBox ul {
+  text-align: left;
+  margin-left: 20px;
+  margin-top: 5px;
+  opacity: 0.9;
+}
+
+#resultBox li { margin: 5px 0; }
+
+#resultBox hr {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.2);
+  margin: 14px 0;
+}
+
+/* =========================================
+   INLINE METER
 ========================================= */
 
 .meter {
@@ -240,114 +284,42 @@ button:hover::after {
   background: #1e293b;
   border-radius: 10px;
   margin-top: 10px;
+  overflow: hidden;
 }
 
 .fake-meter {
   height: 100%;
-  background: linear-gradient(90deg, red, orange, green);
   border-radius: 10px;
 }
 
 /* =========================================
-   📚 INFO SECTION
-========================================= */
-
-.info-section {
-  margin-top: 30px;
-  text-align: left;
-}
-
-.info-section ul {
-  margin-top: 10px;
-}
-
-.info-section li {
-  margin: 5px 0;
-  opacity: 0.8;
-}
-
-/* =========================================
-   🔻 FOOTER
-========================================= */
-
-footer {
-  margin-top: 40px;
-  opacity: 0.6;
-}
-
-/* =========================================
-   ✨ FADE IN
-========================================= */
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* 🔥 ADD THIS EXACTLY HERE */
-@keyframes pop {
-  0% { transform: scale(0.9); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-/* =========================================
-   🌈 SCROLLBAR
-========================================= */
-
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #22c55e;
-  border-radius: 10px;
-}
-
-/* =========================================
-   📱 RESPONSIVE DESIGN
-========================================= */
-
-@media (max-width: 768px) {
-  body {
-    padding: 20px;
-  }
-
-  .container {
-    padding: 20px;
-  }
-
-  textarea {
-    height: 120px;
-  }
-
-  button {
-    width: 100%;
-  }
-}
-
-/* =========================================
-   🔥 EXTRA EFFECTS
+   KEYWORD TAGS — glowing
 ========================================= */
 
 .tag {
-  background: #22c55e;
-  padding: 4px 10px;
-  margin: 3px;
-  border-radius: 8px;
   display: inline-block;
+  background: #22c55e;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 10px;
+  margin: 3px 2px;
+  border-radius: 8px;
   box-shadow: 0 0 10px #22c55e;
-  transition: 0.3s;
 }
+
+.tag:hover {
+  transform: scale(1.12);
+  box-shadow: 0 0 20px #22c55e;
+}
+
+/* =========================================
+   MATCH BOX
+========================================= */
 
 .match-box {
   margin-top: 10px;
-  padding: 10px;
+  padding: 10px 14px;
   background: rgba(255,255,255,0.08);
   border-radius: 10px;
 }
@@ -355,37 +327,48 @@ footer {
 .match-title {
   font-size: 14px;
   opacity: 0.7;
-}
-
-.match-text {
-  font-size: 15px;
-  margin-top: 5px;
-}
-
-.tag:hover {
-  transform: scale(1.1);
-  box-shadow: 0 0 20px #22c55e;
-}
-
-/* Glow pulse */
-@keyframes glow {
-  0% { box-shadow: 0 0 5px #22c55e; }
-  50% { box-shadow: 0 0 20px #22c55e; }
-  100% { box-shadow: 0 0 5px #22c55e; }
-}
-
-button:hover {
-  transform: scale(1.08);
-  box-shadow: 0 0 15px #22c55e, 0 0 30px #22c55e;
-  animation: glow 1s infinite;
-}
-/* Smooth transitions */
-* {
-  transition: all 0.2s ease-in-out;
+  margin-bottom: 5px;
 }
 
 /* =========================================
-   ✨ PARTICLES BACKGROUND
+   INFO SECTION
+========================================= */
+
+.info-section {
+  margin-top: 30px;
+  text-align: left;
+  padding: 20px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.info-section h3 {
+  margin-bottom: 10px;
+  font-size: 1rem;
+  opacity: 0.85;
+}
+
+.info-section ul { padding-left: 18px; }
+
+.info-section li {
+  margin: 6px 0;
+  opacity: 0.8;
+  font-size: 14px;
+}
+
+/* =========================================
+   FOOTER
+========================================= */
+
+footer {
+  margin-top: 40px;
+  opacity: 0.6;
+  font-size: 13px;
+}
+
+/* =========================================
+   PARTICLES — FIXED bottom anchor
 ========================================= */
 
 .particles {
@@ -395,23 +378,43 @@ button:hover {
   width: 100%;
   height: 100%;
   z-index: -1;
+  pointer-events: none;
   overflow: hidden;
 }
 
 .particles span {
   position: absolute;
+  bottom: -10px;
   width: 8px;
   height: 8px;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   animation: floatParticles linear infinite;
 }
 
 @keyframes floatParticles {
-  from {
-    transform: translateY(100vh) scale(0);
-  }
-  to {
-    transform: translateY(-10vh) scale(1);
-  }
+  from { transform: translateY(0) scale(0.5); opacity: 0.7; }
+  to   { transform: translateY(-110vh) scale(1.2); opacity: 0; }
+}
+
+/* =========================================
+   SCROLLBAR
+========================================= */
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-thumb {
+  background: #22c55e;
+  border-radius: 10px;
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 768px) {
+  body { padding: 20px; }
+  .container { padding: 20px; }
+  textarea { height: 120px; }
+  button { width: 100%; }
+  .button-group { flex-direction: column; }
 }
