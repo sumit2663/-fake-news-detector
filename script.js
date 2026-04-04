@@ -492,15 +492,27 @@ function displayResult(result, confidence, analysis, rawText) {
 
     const highlighted = highlightWords(rawText.trim(), analysis.vocabulary.found.fake);
 
-    box.className = result.className;
+    box.className = "";
+    if (result.className === "fake") {
+        box.classList.add("fake");
+    } else if (confidence < 60) {
+        box.classList.add("warn");
+    } else if (confidence < 80) {
+        box.classList.add("real-light");
+    } else {
+        box.classList.add("real");
+    }
     box.style.opacity = "0";
+    const structural = analysis?.structural?.score || 0;
+    const vocab = analysis?.vocabulary?.score || 0;
+    const datasetScore = analysis?.datasetData?.score || 0;
     box.innerHTML = `
       <h3 class="result-title">${result.text}</h3>
       <p><strong>Confidence:</strong> ${confidence}%</p>
       <p style="margin-top:4px;font-size:14px;opacity:0.7;">
-        Structural score: ${analysis.structural.score.toFixed(1)} &nbsp;|&nbsp;
-        Vocab score: ${analysis.vocabulary.score.toFixed(1)} &nbsp;|&nbsp;
-        Dataset score: ${analysis.datasetData.score.toFixed(1)}
+        🧱 Structural: ${structural.toFixed(1)} &nbsp;|&nbsp;
+        🧠 Vocab: ${vocab.toFixed(1)} &nbsp;|&nbsp;
+        📦 Dataset: ${datasetScore.toFixed(1)}
       </p>
 
       <div class="meter">
