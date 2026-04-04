@@ -495,7 +495,7 @@ function displayResult(result, confidence, analysis, rawText) {
     box.className = "";
     if (result.className === "fake") {
         box.classList.add("fake");
-    } else if (confidence < 60) {
+    } else if (result.className === "warn" || confidence < 60) {
         box.classList.add("warn");
     } else if (confidence < 80) {
         box.classList.add("real-light");
