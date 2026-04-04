@@ -237,6 +237,11 @@ button:hover::after {
   box-shadow: 0 0 20px #16a34a;
 }
 
+#resultBox.real-light {
+  background: rgba(34,197,94,0.4);
+  box-shadow: 0 0 15px #22c55e;
+}
+
 #resultBox.fake {
   background: rgba(220, 38, 38, 0.8);
   box-shadow: 0 0 20px #dc2626;
