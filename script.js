@@ -1,456 +1,477 @@
 /**************************************************
- * FAKE NEWS DETECTOR — DATASET-TUNED SCRIPT
- *
- * Detection logic rebuilt from Kaggle dataset analysis.
- *
- * Key insight from the data:
- *   FAKE headlines use: "watch:", "breaking:", (video), (tweet),
- *   (image/images), (details), censored * words, "just", dramatic
- *   verbs (wrecked, destroyed, obliterated), emotional adjectives
- *   (hilarious, epic, brilliant), curly/smart quotes for mockery,
- *   and tabloid-style sentence structure.
- *
- *   REAL headlines use: "factbox:", "exclusive:", "u.s.", ": nyt",
- *   ": cnn", ": sources", institutional nouns (senator, secretary,
- *   congress, committee), neutral verbs (says, said, seeks, urges),
- *   and dry factual structure with no parenthetical media tags.
- *
- * Logic layers (all additive):
- *   1. Structural patterns  (format giveaways)
- *   2. Vocabulary scoring   (word-level fake/real signals)
- *   3. Dataset similarity   (cosine TF-IDF against loaded entries)
- *   4. Naive Bayes prior    (base rate: dataset is ~50/50)
+ * TRUTHSCAN v2.4 — COMPLETE SCRIPT
+ * Features:
+ *  - 3-layer detection (Structure + Vocabulary + TF-IDF Dataset)
+ *  - Scan history with click-to-reload
+ *  - Session stats (analyzed / fake / real counters)
+ *  - Animated step-by-step scanning UI
+ *  - Score breakdown per layer
+ *  - Copy report to clipboard
+ *  - Share via Web Share API
+ *  - Example headlines loader
+ *  - Line numbers in textarea
+ *  - URL detection hint
+ *  - Live clock in footer
+ *  - LocalStorage persistence for history & stats
+ *  - Ticker feed updater
  **************************************************/
 
 
 // ==============================
-// GLOBAL STATE
+// STATE
 // ==============================
 
 let dataset = [];
 let isLoaded = false;
 let idfCache = null;
 let vocabCache = null;
+let lastResult = null;
+
+const SESSION = {
+  analyzed: parseInt(localStorage.getItem('ts_analyzed') || '0'),
+  fake:     parseInt(localStorage.getItem('ts_fake')     || '0'),
+  real:     parseInt(localStorage.getItem('ts_real')     || '0'),
+};
+
+let scanHistory = JSON.parse(localStorage.getItem('ts_history') || '[]');
+
+const EXAMPLES = [
+  "Watch: Trump completely loses it on Twitter after CNN calls him out for lying again (video)",
+  "Breaking: Scientists discover miracle cure doctors don't want you to know about",
+  "Senate votes to advance government funding bill before December deadline",
+  "Leaked email proves deep state conspired to steal the election, share before deleted!",
+  "U.S. treasury secretary urges congress to raise debt ceiling: sources",
+  "Pope Francis just called out Donald Trump during his Christmas speech and it's epic",
+  "Federal judge partially lifts travel ban restrictions, ruling to be appealed: reuters",
+  "Republicans wrecked after democrats expose their insane corruption (tweet/video)",
+];
+let exampleIdx = 0;
 
 
 // ==============================
-// LOAD DATASET
+// INIT
+// ==============================
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadDataset();
+  renderStats();
+  renderHistory();
+  startClock();
+
+  document.getElementById('newsText').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.ctrlKey) checkNews();
+  });
+
+  document.getElementById('newsText').addEventListener('input', e => {
+    const v = e.target.value;
+    if (/https?:\/\//.test(v)) {
+      document.getElementById('urlHint').style.display = 'block';
+    } else {
+      document.getElementById('urlHint').style.display = 'none';
+    }
+  });
+});
+
+
+// ==============================
+// DATASET LOAD
 // ==============================
 
 function loadDataset() {
-    fetch("data.json")
-        .then(res => {
-            if (!res.ok) throw new Error("HTTP " + res.status);
-            return res.json();
-        })
-        .then(data => {
-            dataset = data;
-            isLoaded = true;
-            console.log(`✅ Dataset loaded: ${dataset.length} items`);
-        })
-        .catch(err => {
-            console.warn("⚠️ data.json not found — running keyword-only mode:", err.message);
-        });
+  fetch('data.json')
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(data => {
+      dataset = data;
+      isLoaded = true;
+      console.log(`✅ Dataset: ${dataset.length} entries`);
+      updateTicker(`DATASET LOADED — ${dataset.length} VERIFIED ENTRIES ONLINE — MULTI-LAYER DETECTION READY`);
+    })
+    .catch(e => {
+      console.warn('data.json not found — keyword mode only:', e.message);
+      updateTicker('KEYWORD-ONLY MODE — ADD data.json FOR FULL DATASET MATCHING');
+    });
 }
-
-loadDataset();
 
 
 // ==============================
-// UI HELPERS
+// UI UTILITIES
 // ==============================
 
-function getTextInput() {
-    return document.getElementById("newsText").value;
+function updateLineNumbers() {
+  const ta = document.getElementById('newsText');
+  const lines = ta.value.split('\n').length;
+  const nums = Array.from({ length: lines }, (_, i) => i + 1).join('\n');
+  document.getElementById('lineNumbers').textContent = nums;
 }
 
-function getResultBox() {
-    return document.getElementById("resultBox");
+function updateCharCount() {
+  const len = document.getElementById('newsText').value.length;
+  document.getElementById('charCount').textContent = `${len} char${len !== 1 ? 's' : ''}`;
 }
 
-function getProgressBar() {
-    return document.getElementById("bar");
+function updateTicker(msg) {
+  document.getElementById('tickerContent').textContent = msg;
 }
 
-function clearText() {
-    document.getElementById("newsText").value = "";
-    const box = getResultBox();
-    box.className = "";
-    box.style.opacity = "1";
-    box.innerHTML = "<p style='opacity:0.6;'>Result will appear here...</p>";
-    const bar = getProgressBar();
-    bar.style.width = "0%";
-    bar.style.background = "#22c55e";
-    bar.style.boxShadow = "0 0 10px #22c55e";
+function startClock() {
+  function tick() {
+    const now = new Date();
+    document.getElementById('footerTime').textContent =
+      now.toUTCString().replace('GMT', 'UTC');
+  }
+  tick();
+  setInterval(tick, 1000);
 }
 
-function showLoading() {
-    const box = getResultBox();
-    box.className = "";
-    box.style.opacity = "1";
-    box.innerHTML = "<p>⏳ Analyzing...</p>";
-    getProgressBar().style.width = "12%";
+function showToast(msg) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2600);
 }
 
-function validateInput(text) {
-    if (!text.trim()) return "⚠️ Please enter some text first!";
-    if (text.trim().length < 8) return "⚠️ Text is too short to analyze reliably.";
-    return null;
+function renderStats() {
+  document.getElementById('stat-analyzed').querySelector('.stat-val').textContent = SESSION.analyzed;
+  document.getElementById('stat-fake').textContent                                = SESSION.fake;
+  document.getElementById('stat-real').textContent                                = SESSION.real;
 }
 
-function detectInputType(text) {
-    if (text.length < 40)           return "Short headline";
-    if (/https?:\/\//.test(text))   return "URL / link";
-    if (text.split(' ').length > 60) return "Full article";
-    return "News headline";
+function saveStats() {
+  localStorage.setItem('ts_analyzed', SESSION.analyzed);
+  localStorage.setItem('ts_fake',     SESSION.fake);
+  localStorage.setItem('ts_real',     SESSION.real);
+}
+
+
+// ==============================
+// HISTORY
+// ==============================
+
+function addHistory(text, cls) {
+  const item = {
+    text: text.trim().slice(0, 80),
+    cls,
+    time: Date.now(),
+  };
+  scanHistory.unshift(item);
+  if (scanHistory.length > 12) scanHistory.pop();
+  localStorage.setItem('ts_history', JSON.stringify(scanHistory));
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (!scanHistory.length) {
+    list.innerHTML = '<div class="history-empty">No scans yet</div>';
+    return;
+  }
+  list.innerHTML = scanHistory.map((h, i) => `
+    <div class="history-item" onclick="reloadHistory(${i})">
+      <div class="history-dot ${h.cls}"></div>
+      <span class="history-snippet">${h.text}</span>
+      <span class="history-badge ${h.cls}">${h.cls.toUpperCase()}</span>
+    </div>
+  `).join('');
+}
+
+function reloadHistory(idx) {
+  const item = scanHistory[idx];
+  if (!item) return;
+  document.getElementById('newsText').value = item.text;
+  updateLineNumbers();
+  updateCharCount();
+  checkNews();
+}
+
+function clearHistory() {
+  scanHistory = [];
+  localStorage.removeItem('ts_history');
+  renderHistory();
+  showToast('HISTORY CLEARED');
+}
+
+
+// ==============================
+// EXAMPLES
+// ==============================
+
+function pasteExample() {
+  document.getElementById('newsText').value = EXAMPLES[exampleIdx % EXAMPLES.length];
+  exampleIdx++;
+  updateLineNumbers();
+  updateCharCount();
+}
+
+function clearAll() {
+  document.getElementById('newsText').value = '';
+  updateLineNumbers();
+  updateCharCount();
+  resetScan();
+}
+
+function resetScan() {
+  document.getElementById('idleState').style.display      = 'flex';
+  document.getElementById('scanningState').style.display  = 'none';
+  document.getElementById('resultState').style.display    = 'none';
+  document.getElementById('scanBtn').disabled             = false;
 }
 
 
 // ==============================
 // LAYER 1 — STRUCTURAL PATTERNS
-// Derived from dataset: patterns that appear in 30%+ of fake
-// headlines but rarely in real ones, and vice versa.
 // ==============================
 
 function analyzeStructure(text) {
-    const t   = text.toLowerCase().trim();
-    const signals = [];
-    let score = 0;
+  const t       = text.toLowerCase().trim();
+  const signals = [];
+  let score     = 0;
 
-    // --- FAKE structural signals ---
+  const addFake = (pts, msg) => { score += pts; signals.push({ type: 'fake', msg }); };
+  const addReal = (pts, msg) => { score -= pts; signals.push({ type: 'real', msg }); };
 
-    // "watch:" prefix — 25%+ of fake headlines
-    if (/^watch\s*:/.test(t)) {
-        score += 3;
-        signals.push("Starts with 'Watch:' — common in sensational fake headlines");
-    }
+  if (/^watch\s*:/.test(t))
+    addFake(3, '"Watch:" prefix — common in sensational fake headlines (25%+ of fake dataset)');
 
-    // "breaking:" prefix
-    if (/^breaking\s*:/.test(t)) {
-        score += 2;
-        signals.push("Starts with 'Breaking:' — often used for dramatic unverified claims");
-    }
+  if (/^breaking\s*:/.test(t))
+    addFake(2, '"Breaking:" prefix — often used for dramatic, unverified claims');
 
-    // Parenthetical media tags: (video), (tweet), (tweets), (image), (images), (details), (screenshots)
-    if (/\((video|tweet|tweets|image|images|details|screenshots|graphic images|pics)\)/.test(t)) {
-        score += 2;
-        signals.push("Has parenthetical media tag like (video) or (images) — tabloid style");
-    }
+  if (/\((video|tweet|tweets|image|images|details|screenshots|graphic images|pics)\)/.test(t))
+    addFake(2, 'Parenthetical media tag (video)/(images)/(details) — tabloid formatting');
 
-    // Censored words with asterisks: f*ck, sh*t, a**, b*tch etc.
-    if (/\b\w+[*]+\w*\b/.test(t)) {
-        score += 3;
-        signals.push("Contains censored words (*) — sensationalist language pattern");
-    }
+  if (/\b\w+[*]+\w*\b/.test(t))
+    addFake(3, 'Censored words with asterisks — sensationalist language pattern');
 
-    // The word "just" used for dramatic effect ("just wrecked", "just admitted")
-    if (/ just /.test(t)) {
-        score += 1.5;
-        signals.push("Uses 'just' for dramatic immediacy — common in outrage headlines");
-    }
+  if (/ just /.test(t))
+    addFake(1.5, 'Word "just" for dramatic immediacy — outrage headline pattern');
 
-    // Dramatic destruction verbs
-    if (/\b(wrecked|destroyed|obliterated|demolished|eviscerated|nuked|torched|shredded|blistered|scorched|ripped|dragged|clowned|slammed|dunked on|took down|schooled)\b/.test(t)) {
-        score += 2;
-        signals.push("Uses dramatic combat verb (wrecked, destroyed, shredded…) — opinion/tabloid style");
-    }
+  if (/\b(wrecked|destroyed|obliterated|demolished|eviscerated|nuked|torched|shredded|blistered|scorched|dragged|schooled|humiliated)\b/.test(t))
+    addFake(2, 'Combat/destruction verb — opinion/tabloid editorial style');
 
-    // Emotional superlatives
-    if (/\b(hilarious|epic|brilliant|stunning|amazing|perfect|incredible|unbelievable|insane|psychotic|disgusting|despicable|vile|awful)\b/.test(t)) {
-        score += 2;
-        signals.push("Contains emotional superlative adjective — editorializing language");
-    }
+  if (/\b(hilarious|epic|brilliant|stunning|amazing|perfect|incredible|unbelievable|insane|psychotic|disgusting|despicable|vile)\b/.test(t))
+    addFake(2, 'Emotional superlative adjective — editorializing, not reporting');
 
-    // Curly/smart quotes used to mock someone's words
-    if (/[\u2018\u2019\u201C\u201D]/.test(text)) {
-        score += 1;
-        signals.push("Uses curly quotes — often used in fake headlines to mock or misrepresent statements");
-    }
+  if (/[\u2018\u2019\u201C\u201D]/.test(text))
+    addFake(1, 'Smart/curly quotes — often used to mock or misrepresent statements');
 
-    // "busted", "exposed", "caught"
-    if (/\b(busted|exposed|caught|leaked|bombshell|explosive|scandal)\b/.test(t)) {
-        score += 2;
-        signals.push("Uses tabloid trigger word (busted/exposed/leaked/bombshell)");
-    }
+  if (/\b(busted|exposed|leaked|bombshell|explosive|scandal)\b/.test(t))
+    addFake(2, 'Tabloid trigger word (busted/leaked/bombshell)');
 
-    // "proves" / "confirms" used for unverified claims
-    if (/\b(proves?|confirms?|admits?)\b.{0,30}\b(trump|obama|clinton|russia|cia|fbi)\b/.test(t)) {
-        score += 1.5;
-        signals.push("Claims to 'prove' or 'confirm' something about a major figure — unverified assertion pattern");
-    }
+  if (/\b(proves?|confirms?)\b.{0,30}\b(trump|obama|clinton|russia|cia|fbi)\b/.test(t))
+    addFake(1.5, 'Claims to "prove" something about a major figure — unverified assertion');
 
-    // --- REAL structural signals (subtract score) ---
+  if (/\b(conspiracy|cover.?up|they don.?t want|what they.?re hiding)\b/.test(t))
+    addFake(3, 'Conspiracy framing language');
 
-    // "factbox:" — exclusively Reuters/AP real news format
-    if (/^factbox\s*:/.test(t)) {
-        score -= 5;
-        signals.push("Starts with 'Factbox:' — Reuters/AP structured news format");
-    }
+  if (/\b(share before|deleted|censored|banned)\b/.test(t))
+    addFake(4, 'Urgency/censorship appeal — manipulation tactic');
 
-    // "exclusive:" — attributed news exclusive
-    if (/^exclusive\s*:/.test(t)) {
-        score -= 2;
-        signals.push("Starts with 'Exclusive:' — attributed sourced reporting");
-    }
+  if (/\b(miracle|guaranteed|100%|secret cure|one weird trick)\b/.test(t))
+    addFake(3, 'Miracle/guarantee language — health misinformation pattern');
 
-    // Source attribution tags at end: ": nyt", ": cnn", ": sources", ": report"
-    if (/:\s*(nyt|cnn|ap|cnbc|bloomberg|sources?|reports?|filing|officials?|poll|statement|reuters|lawmakers?|aide|aides)\s*$/.test(t)) {
-        score -= 3;
-        signals.push("Ends with source attribution tag — wire/institutional journalism format");
-    }
+  // REAL signals
+  if (/^factbox\s*:/.test(t))
+    addReal(5, '"Factbox:" prefix — exclusive Reuters/AP structured reporting format');
 
-    // "u.s." abbreviation — very strong real news signal in this dataset
-    if (/\bu\.s\.\b/.test(t)) {
-        score -= 2;
-        signals.push("Uses 'u.s.' abbreviation — formal wire journalism style");
-    }
+  if (/^exclusive\s*:/.test(t))
+    addReal(2, '"Exclusive:" prefix — attributed sourced reporting');
 
-    // Institutional verbs: says, said, seeks, urges, calls, warns
-    if (/\b(says|said|seeks|urges|calls for|warns|vows|pledges|announces|confirms|plans to)\b/.test(t)) {
-        score -= 1.5;
-        signals.push("Uses neutral attribution verb (says/said/urges) — journalistic reporting style");
-    }
+  if (/:\s*(nyt|cnn|ap|cnbc|bloomberg|sources?|reports?|filing|officials?|poll|statement|reuters|lawmakers?|aide|aides)\s*$/i.test(t))
+    addReal(3, 'Source attribution tag at end — wire journalism attribution format');
 
-    // "trump on twitter (date)" format — factbox series
-    if (/trump on twitter \(/.test(t)) {
-        score -= 5;
-        signals.push("'Trump on Twitter (date)' format — Reuters factbox series");
-    }
+  if (/\bu\.s\.\b/.test(t))
+    addReal(2, 'Uses "u.s." abbreviation — formal wire journalism style');
 
-    return { score, signals };
+  if (/\b(says|said|seeks|urges|calls for|warns|vows|pledges|announces|confirms|plans to)\b/.test(t))
+    addReal(1.5, 'Neutral attribution verb (says/urges/warns) — journalistic style');
+
+  if (/trump on twitter \(/.test(t))
+    addReal(5, '"Trump on Twitter (date)" — Reuters factbox series format');
+
+  if (/^(senator|congress|house|senate|u\.s\.|federal|white house|pentagon)/.test(t))
+    addReal(1.5, 'Institutional noun at headline start — formal news structure');
+
+  return { score, signals };
 }
 
 
 // ==============================
-// LAYER 2 — VOCABULARY SCORING
-// Words statistically over-represented in fake vs real headlines
-// from this Kaggle dataset.
+// LAYER 2 — VOCABULARY
 // ==============================
 
-// Each word maps to [fakeScore, realScore]
-// Positive = fake signal, Negative = real signal
-const VOCAB_SCORES = {
-    // Strong fake words (appeared 10x+ more in fake than real)
-    "hilarious":    3,  "wrecked":      3,  "obliterate":   3,
-    "clown":        2,  "meltdown":     3,  "tantrum":      3,
-    "humiliated":   2,  "embarrassing": 2,  "disgusting":   2,
-    "pathetic":     3,  "idiot":        3,  "moron":        3,
-    "lunatic":      3,  "psycho":       3,  "unhinged":     3,
-    "panics":       3,  "panicking":    3,  "seething":     3,
-    "furious":      2,  "outrage":      2,  "shocking":     2,
-    "horrifying":   2,  "vile":         2,  "scumbag":      4,
-    "dumbass":      4,  "coward":       2,  "hypocrite":    3,
-    "nazis":        2,  "racist":       2,  "sexist":       2,
-    "molester":     3,  "pedophile":    4,  "pedo":         4,
-    "conspiracy":   3,  "leaked":       2,  "bombshell":    2,
-    "busted":       2,  "exposed":      2,  "caught":       1.5,
-    "epic":         2,  "brilliant":    2,  "perfect":      1.5,
-    "amazing":      1.5,"stunning":     1.5,"incredible":   1.5,
-    "destroys":     2,  "obliterates":  2,  "nukes":        2,
-    "torches":      2,  "blisters":     2,  "shreds":       2,
-
-    // Strong real words (appeared in mostly real headlines)
-    "u.s.":        -3,  "senate":      -1,  "congress":    -1,
-    "republican":  -0.5,"democrat":    -0.5,"legislation": -2,
-    "committee":   -2,  "amendment":   -2,  "appropriat":  -2,
-    "subpoena":    -2,  "testimony":   -1,  "nomination":  -2,
-    "confirmed":   -1,  "bipartisan":  -2,  "judiciary":   -2,
-    "exclusive":   -1,  "factbox":     -3,  "reuters":     -3,
-    "spokeswoman": -1,  "spokesman":   -1,  "officials":   -1,
-    "lawmakers":   -1,  "regulators":  -2,  "intelligence":-1,
-    "pentagon":    -1,  "treasury":    -1,  "department":  -1,
+const VOCAB = {
+  // Fake indicators
+  hilarious:3, wrecked:3, obliterate:3, clown:2, meltdown:3,
+  tantrum:3, humiliated:2, embarrassing:2, disgusting:2, pathetic:3,
+  idiot:3, moron:3, lunatic:3, psycho:3, unhinged:3, panics:3,
+  panicking:3, seething:3, furious:2, outrage:2, shocking:2,
+  horrifying:2, vile:2, scumbag:4, dumbass:4, coward:2, hypocrite:3,
+  nazis:2, racist:2, sexist:2, molester:3, pedophile:4, pedo:4,
+  conspiracy:3, leaked:2, bombshell:2, busted:2, exposed:2,
+  epic:2, brilliant:2, amazing:1.5, stunning:1.5, incredible:1.5,
+  destroys:2, obliterates:2, nukes:2, torches:2, blisters:2, shreds:2,
+  // Real indicators (negative = real)
+  'u.s.':-3, senate:-1, congress:-1, republican:-0.5, democrat:-0.5,
+  legislation:-2, committee:-2, amendment:-2, subpoena:-2, testimony:-1,
+  nomination:-2, bipartisan:-2, judiciary:-2, exclusive:-1, factbox:-3,
+  reuters:-3, spokeswoman:-1, spokesman:-1, officials:-1, lawmakers:-1,
+  regulators:-2, intelligence:-1, pentagon:-1, treasury:-1, department:-1,
+  appropriations:-2, resolution:-1, confirms:-0.5,
 };
 
 function analyzeVocabulary(text) {
-    const t = text.toLowerCase().replace(/[^\w\s.]/g, " ");
-    const words = t.split(/\s+/);
-    let score = 0;
-    const found = { fake: [], real: [] };
+  const t       = text.toLowerCase().replace(/[^\w\s.]/g, ' ');
+  const words   = t.split(/\s+/);
+  let score     = 0;
+  const found   = { fake: [], real: [] };
 
-    words.forEach(word => {
-        if (VOCAB_SCORES[word] !== undefined) {
-            score += VOCAB_SCORES[word];
-            if (VOCAB_SCORES[word] > 0) found.fake.push(word);
-            else found.real.push(word);
-        }
-        // Partial match for stems
-        for (const key of Object.keys(VOCAB_SCORES)) {
-            if (key.length > 5 && word.startsWith(key) && key !== word) {
-                score += VOCAB_SCORES[key] * 0.5;
-            }
-        }
-    });
+  words.forEach(word => {
+    const s = VOCAB[word];
+    if (s !== undefined) {
+      score += s;
+      if (s > 0) found.fake.push(word);
+      else        found.real.push(word.replace('-',''));
+    }
+  });
 
-    return { score: Math.max(-6, Math.min(score, 12)), found };
+  return { score: Math.max(-8, Math.min(score, 14)), found };
 }
 
 
 // ==============================
-// LAYER 3 — DATASET SIMILARITY
-// TF-IDF cosine similarity against loaded dataset entries.
+// LAYER 3 — TF-IDF DATASET
 // ==============================
 
-const STOP_WORDS = new Set([
-    "the","is","at","on","in","and","of","to","a","an","it","its",
-    "was","are","be","for","that","this","with","as","by","from","or",
-    "but","not","have","had","has","he","she","they","we","you","his",
-    "her","their","our","been","were","will","would","could","should",
-    "after","before","over","about","into","than","when","who","what",
-    "how","all","also","just","more","some","such","then","there","so"
+const STOP = new Set([
+  'the','is','at','on','in','and','of','to','a','an','it','its',
+  'was','are','be','for','that','this','with','as','by','from','or',
+  'but','not','have','had','has','he','she','they','we','you','his',
+  'her','their','our','been','were','will','would','could','should',
+  'after','before','over','about','into','than','when','who','what',
+  'how','all','also','just','more','some','such','then','there','so'
 ]);
 
 function getWords(text) {
-    return text.toLowerCase()
-        .replace(/[^\w\s]/g, " ")
-        .split(/\s+/)
-        .filter(w => w.length > 2 && !STOP_WORDS.has(w));
+  return text.toLowerCase().replace(/[^\w\s]/g, ' ')
+    .split(/\s+/).filter(w => w.length > 2 && !STOP.has(w));
 }
 
 function buildIDF() {
-    if (idfCache) return;
-    vocabCache = new Set();
-    dataset.forEach(item => getWords(item.text).forEach(w => vocabCache.add(w)));
-    vocabCache = Array.from(vocabCache);
-    idfCache = {};
-    const N = dataset.length;
-    vocabCache.forEach(word => {
-        const df = dataset.filter(item => getWords(item.text).includes(word)).length;
-        idfCache[word] = Math.log((N + 1) / (df + 1)) + 1;
-    });
+  if (idfCache) return;
+  const allWords = new Set();
+  dataset.forEach(d => getWords(d.text).forEach(w => allWords.add(w)));
+  vocabCache = Array.from(allWords);
+  idfCache   = {};
+  const N    = dataset.length;
+  vocabCache.forEach(word => {
+    const df       = dataset.filter(d => getWords(d.text).includes(word)).length;
+    idfCache[word] = Math.log((N + 1) / (df + 1)) + 1;
+  });
 }
 
 function getTFIDF(text) {
-    const words = getWords(text);
-    const tf = {};
-    words.forEach(w => { tf[w] = (tf[w] || 0) + 1; });
-    const tfidf = {};
-    for (const w in tf) {
-        tfidf[w] = tf[w] * (idfCache ? (idfCache[w] || 0) : 1);
-    }
-    return tfidf;
+  const words = getWords(text);
+  const tf    = {};
+  words.forEach(w => { tf[w] = (tf[w] || 0) + 1; });
+  const vec   = {};
+  for (const w in tf) vec[w] = tf[w] * (idfCache[w] || 0);
+  return vec;
 }
 
 function cosine(v1, v2) {
-    let dot = 0, m1 = 0, m2 = 0;
-    const keys = new Set([...Object.keys(v1), ...Object.keys(v2)]);
-    keys.forEach(w => {
-        const a = v1[w] || 0, b = v2[w] || 0;
-        dot += a * b; m1 += a * a; m2 += b * b;
-    });
-    return dot / (Math.sqrt(m1) * Math.sqrt(m2) || 1);
+  let dot = 0, m1 = 0, m2 = 0;
+  const keys = new Set([...Object.keys(v1), ...Object.keys(v2)]);
+  keys.forEach(w => {
+    const a = v1[w]||0, b = v2[w]||0;
+    dot += a*b; m1 += a*a; m2 += b*b;
+  });
+  return dot / (Math.sqrt(m1) * Math.sqrt(m2) || 1);
 }
 
 function analyzeDataset(text) {
-    if (!isLoaded || dataset.length === 0) {
-        return { score: 0, topMatches: [], matchItem: null };
-    }
+  if (!isLoaded || !dataset.length) return { score: 0, topMatches: [] };
 
-    buildIDF();
-    const inputVec = getTFIDF(text);
+  buildIDF();
+  const inputVec = getTFIDF(text);
 
-    const scored = dataset.map(item => ({
-        item,
-        sim: cosine(inputVec, getTFIDF(item.text))
-    })).sort((a, b) => b.sim - a.sim);
+  const scored = dataset
+    .map(item => ({ item, sim: cosine(inputVec, getTFIDF(item.text)) }))
+    .sort((a, b) => b.sim - a.sim);
 
-    const topMatches = scored
-        .slice(0, 5)
-        .filter(s => s.sim > 0.08)
-        .map(s => ({ text: s.item.text, label: s.item.label, similarity: s.sim }));
+  const topMatches = scored.slice(0, 5)
+    .filter(s => s.sim > 0.06)
+    .map(s => ({ text: s.item.text, label: s.item.label, sim: s.sim }));
 
-    // Weighted vote from top-5 matches
-    let fakeWeight = 0, realWeight = 0;
-    topMatches.forEach(m => {
-        if (m.label === "fake") fakeWeight += m.similarity;
-        else                    realWeight += m.similarity;
-    });
+  let fakeW = 0, realW = 0;
+  topMatches.forEach(m => {
+    if (m.label === 'fake') fakeW += m.sim;
+    else                    realW += m.sim;
+  });
 
-    let score = 0;
-    let matchItem = null;
+  let score = 0;
+  if (fakeW + realW > 0.06) {
+    const ratio = fakeW / (fakeW + realW);
+    score = (ratio - 0.5) * 8;
+  }
 
-    if (fakeWeight + realWeight > 0.1) {
-        const fakeRatio = fakeWeight / (fakeWeight + realWeight);
-        // fakeRatio > 0.6 → fake signal, < 0.4 → real signal
-        score = (fakeRatio - 0.5) * 8;  // range roughly -4 to +4
-        matchItem = topMatches[0]?.label ? topMatches[0] : null;
-    }
-
-    return { score, topMatches, matchItem };
+  return { score, topMatches };
 }
 
 
 // ==============================
-// COMBINED ANALYSIS
-// ==============================
-
-function analyzeAll(rawText) {
-    const text = rawText.trim();
-
-    const structural  = analyzeStructure(text);
-    const vocabulary  = analyzeVocabulary(text);
-    const datasetData = analyzeDataset(text);
-
-    // Weighted total: structure is most reliable, then vocab, then dataset
-    const totalScore =
-        structural.score  * 1.0 +
-        vocabulary.score  * 0.8 +
-        datasetData.score * 0.6;
-
-    return { structural, vocabulary, datasetData, totalScore };
-}
-
-
-// ==============================
-// DECISION ENGINE
+// VERDICT
 // ==============================
 
 function decideResult(score) {
-    if (score >= 5)  return { text: "❌ Likely Fake News",          className: "fake" };
-    if (score >= 2)  return { text: "⚠️ Suspicious — Verify This",  className: "warn" };
-    if (score <= -3) return { text: "✅ Looks Credible",             className: "real" };
-    if (score <= -1) return { text: "✅ Probably Real News",         className: "real" };
-    return               { text: "⚠️ Uncertain — Needs More Context", className: "warn" };
+  if (score >= 6)  return { text: 'LIKELY FAKE NEWS',         cls: 'fake', icon: '✕' };
+  if (score >= 3)  return { text: 'SUSPICIOUS CONTENT',       cls: 'warn', icon: '!' };
+  if (score >= 1)  return { text: 'SLIGHT FAKE INDICATORS',   cls: 'warn', icon: '?' };
+  if (score <= -4) return { text: 'CREDIBLE NEWS',            cls: 'real', icon: '✓' };
+  if (score <= -1) return { text: 'PROBABLY REAL NEWS',       cls: 'real', icon: '✓' };
+  return                  { text: 'UNCERTAIN — VERIFY',       cls: 'warn', icon: '?' };
 }
 
-function calculateConfidence(score) {
-    const abs = Math.abs(score);
-    if (abs >= 8)  return 95;
-    if (abs >= 5)  return 88;
-    if (abs >= 3)  return 78;
-    if (abs >= 2)  return 68;
-    return 55;
-}
-
-
-// ==============================
-// PROGRESS BAR
-// ==============================
-
-function updateProgress(confidence, cls) {
-    const bar = getProgressBar();
-    bar.style.width = confidence + "%";
-    const colors = {
-        fake: ["linear-gradient(90deg,#dc2626,#f87171)", "0 0 10px #dc2626"],
-        warn: ["linear-gradient(90deg,#ca8a04,#fbbf24)", "0 0 10px #ca8a04"],
-        real: ["linear-gradient(90deg,#16a34a,#4ade80)", "0 0 10px #22c55e"],
-    };
-    bar.style.background  = colors[cls][0];
-    bar.style.boxShadow   = colors[cls][1];
+function calcConfidence(score) {
+  const a = Math.abs(score);
+  if (a >= 10) return 96;
+  if (a >= 7)  return 90;
+  if (a >= 5)  return 83;
+  if (a >= 3)  return 74;
+  if (a >= 1)  return 62;
+  return 50;
 }
 
 
 // ==============================
-// TEXT HIGHLIGHTER
+// SCAN ANIMATION
 // ==============================
 
-function highlightWords(text, fakeWords) {
-    let result = text;
-    fakeWords.forEach(word => {
-        const safe  = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        const regex = new RegExp(`(${safe})`, "gi");
-        result = result.replace(regex, '<span style="color:#fde047;font-weight:bold;">$1</span>');
-    });
-    return result;
+function runScanAnimation(callback) {
+  const steps = ['step1','step2','step3','step4'];
+  const delays = [200, 550, 900, 1200];
+
+  steps.forEach(id => {
+    document.getElementById(id).className = 'scan-step';
+  });
+
+  steps.forEach((id, i) => {
+    setTimeout(() => {
+      // Done previous
+      if (i > 0) {
+        document.getElementById(steps[i-1]).className = 'scan-step done';
+        document.getElementById(steps[i-1]).textContent =
+          '✓ ' + document.getElementById(steps[i-1]).textContent.slice(2);
+      }
+      document.getElementById(id).className = 'scan-step active';
+    }, delays[i]);
+  });
+
+  setTimeout(() => {
+    document.getElementById(steps[steps.length-1]).className = 'scan-step done';
+    callback();
+  }, 1600);
 }
 
 
@@ -458,86 +479,106 @@ function highlightWords(text, fakeWords) {
 // DISPLAY RESULT
 // ==============================
 
-function displayResult(result, confidence, analysis, rawText) {
-    const box = getResultBox();
+function displayResult(analysis) {
+  const { structural, vocabulary, datasetResult, total, text } = analysis;
+  const result     = decideResult(total);
+  const confidence = calcConfidence(total);
 
-    const meterColor = { fake:"#dc2626", warn:"#ca8a04", real:"#16a34a" }[result.className];
+  // Update stats
+  SESSION.analyzed++;
+  if (result.cls === 'fake') SESSION.fake++;
+  else if (result.cls === 'real') SESSION.real++;
+  saveStats();
+  renderStats();
 
-    const message = {
-        fake: "This content shows multiple signals commonly found in fake or sensationalist news.",
-        warn: "Mixed signals detected. Some elements suggest fabrication — verify with a trusted source.",
-        real: "This headline follows patterns typical of credible, institutional journalism.",
-    }[result.className];
+  // Add to history
+  addHistory(text, result.cls);
 
-    // Combine all signals for display
-    const allSignals = [
-        ...analysis.structural.signals,
-        ...analysis.vocabulary.found.fake.slice(0, 3).map(w => `Fake-signal word detected: "${w}"`),
-        ...analysis.vocabulary.found.real.slice(0, 2).map(w => `Credibility word detected: "${w}"`),
-    ];
+  // Store for copy/share
+  lastResult = { result, confidence, analysis };
 
-    const signalsHtml = allSignals.length
-        ? allSignals.map(s => `<li>${s}</li>`).join("")
-        : "<li>No strong structural signals detected</li>";
+  // Show result panel
+  document.getElementById('scanningState').style.display = 'none';
+  document.getElementById('resultState').style.display   = 'block';
 
-    // Dataset matches
-    const topMatchesHtml = analysis.datasetData.topMatches?.length
-        ? analysis.datasetData.topMatches.slice(0, 3).map(m => `
-            <li>
-              <span style="font-size:12px;opacity:0.55;">${Math.round(m.similarity * 100)}% match</span>
-              — <em style="opacity:0.8;">${m.label === "fake" ? "❌ fake" : "✅ real"}</em>:
-              ${m.text.trim().slice(0, 85)}${m.text.length > 85 ? "…" : ""}
-            </li>`).join("")
-        : "<li style='opacity:0.5;'>No close dataset matches found</li>";
+  // Verdict banner
+  const banner = document.getElementById('verdictBanner');
+  banner.className = `verdict-banner ${result.cls}-banner`;
 
-    const highlighted = highlightWords(rawText.trim(), analysis.vocabulary.found.fake);
+  const icon = document.getElementById('verdictIcon');
+  icon.textContent  = result.icon;
+  icon.className    = `verdict-icon ${result.cls}`;
 
-    box.className = "";
-    if (result.className === "fake") {
-        box.classList.add("fake");
-    } else if (result.className === "warn" || confidence < 60) {
-        box.classList.add("warn");
-    } else if (confidence < 80) {
-        box.classList.add("real-light");
-    } else {
-        box.classList.add("real");
-    }
-    box.style.opacity = "0";
-    const structural = analysis?.structural?.score || 0;
-    const vocab = analysis?.vocabulary?.score || 0;
-    const datasetScore = analysis?.datasetData?.score || 0;
-    box.innerHTML = `
-      <h3 class="result-title">${result.text}</h3>
-      <p><strong>Confidence:</strong> ${confidence}%</p>
-      <p style="margin-top:4px;font-size:14px;opacity:0.7;">
-        🧱 Structural: ${structural.toFixed(1)} &nbsp;|&nbsp;
-        🧠 Vocab: ${vocab.toFixed(1)} &nbsp;|&nbsp;
-        📦 Dataset: ${datasetScore.toFixed(1)}
-      </p>
+  document.getElementById('verdictPulse').className = `verdict-pulse ${result.cls}`;
+  document.getElementById('verdictLabel').textContent = result.text;
+  document.getElementById('verdictLabel').className   = `verdict-label ${result.cls}`;
+  document.getElementById('verdictSub').textContent   = `Confidence: ${confidence}% | Score: ${total.toFixed(2)}`;
+  document.getElementById('verdictScore').textContent = `${total >= 0 ? '+' : ''}${total.toFixed(1)}`;
 
-      <div class="meter">
-        <div class="fake-meter" style="width:${confidence}%;background:${meterColor};"></div>
-      </div>
+  // Meters — animate after short delay
+  const fakePct = Math.min(100, Math.max(0, Math.round(50 + total * 5)));
+  const realPct = 100 - fakePct;
+  setTimeout(() => {
+    setMeter('fakeBar', 'fakePct', fakePct);
+    setMeter('realBar', 'realPct', realPct);
+    setMeter('confBar', 'confPct', confidence);
+  }, 100);
 
-      <p style="margin-top:14px;"><strong>Why this result:</strong></p>
-      <ul>${signalsHtml}</ul>
+  // Breakdown cells
+  setBreakdown('bdStruct', 'bdStructVal', structural.score);
+  setBreakdown('bdVocab',  'bdVocabVal',  vocabulary.score);
+  setBreakdown('bdDataset','bdDatasetVal', datasetResult.score);
+  setBreakdown('bdTotal',  'bdTotalVal',  total);
 
-      <div class="match-box">
-        <p class="match-title">📦 Closest dataset matches</p>
-        <ul>${topMatchesHtml}</ul>
-      </div>
+  // Signals
+  const allSignals = [
+    ...structural.signals,
+    ...vocabulary.found.fake.slice(0, 4).map(w => ({ type: 'fake', msg: `Fake-signal word detected: "${w}"` })),
+    ...vocabulary.found.real.slice(0, 3).map(w => ({ type: 'real', msg: `Credibility marker: "${w}"` })),
+  ];
+  const sigList = document.getElementById('signalsList');
+  document.getElementById('signalCount').textContent = allSignals.length;
+  if (!allSignals.length) {
+    sigList.innerHTML = '<div class="signal-item neutral-sig"><div class="signal-dot"></div>No strong signals detected — result based on dataset similarity only</div>';
+  } else {
+    sigList.innerHTML = allSignals.map((s, i) => `
+      <div class="signal-item ${s.type}-sig" style="animation-delay:${i * 0.05}s">
+        <div class="signal-dot"></div>${s.msg}
+      </div>`).join('');
+  }
 
-      <p style="margin-top:14px;font-style:italic;opacity:0.85;">${message}</p>
+  // Dataset matches
+  const matchList = document.getElementById('matchesList');
+  const matches   = datasetResult.topMatches || [];
+  if (!matches.length) {
+    matchList.innerHTML = '<div class="match-item"><div class="match-text">No close matches in dataset — result based on structural/vocabulary analysis</div></div>';
+  } else {
+    matchList.innerHTML = matches.slice(0, 4).map((m, i) => `
+      <div class="match-item" style="animation-delay:${i*0.08}s">
+        <div class="match-meta">
+          <span class="match-pct ${m.label}">${Math.round(m.sim * 100)}%</span>
+          <span class="match-label ${m.label}">${m.label.toUpperCase()}</span>
+        </div>
+        <div class="match-text">${m.text.trim()}</div>
+      </div>`).join('');
+  }
 
-      <hr>
-      <p style="font-size:13px;opacity:0.65;margin-top:8px;">
-        <strong>Input (flagged words highlighted):</strong><br>${highlighted}
-      </p>
-    `;
+  // Ticker update
+  updateTicker(`SCAN COMPLETE — VERDICT: ${result.text} — CONFIDENCE: ${confidence}% — SCORE: ${total.toFixed(2)} — DATASET MATCHES: ${matches.length}`);
+}
 
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-        box.style.opacity = "1";
-    }));
+function setMeter(barId, valId, pct) {
+  document.getElementById(barId).style.width         = pct + '%';
+  document.getElementById(valId).textContent         = pct + '%';
+}
+
+function setBreakdown(cellId, valId, score) {
+  const cell = document.getElementById(cellId);
+  const val  = document.getElementById(valId);
+  const rounded = Math.round(score * 10) / 10;
+  val.textContent = (rounded >= 0 ? '+' : '') + rounded;
+  val.className   = 'bd-val ' + (rounded > 0 ? 'pos' : rounded < 0 ? 'neg' : '');
+  cell.className  = 'breakdown-cell ' + (rounded > 0 ? 'positive' : rounded < 0 ? 'negative' : '');
 }
 
 
@@ -546,50 +587,86 @@ function displayResult(result, confidence, analysis, rawText) {
 // ==============================
 
 function checkNews() {
-    showLoading();
+  const text = document.getElementById('newsText').value.trim();
 
-    setTimeout(() => {
-        const rawText = getTextInput();
-        const error   = validateInput(rawText);
+  if (!text) { showToast('ENTER TEXT FIRST'); return; }
+  if (text.length < 8) { showToast('TEXT TOO SHORT'); return; }
 
-        if (error) {
-            const box = getResultBox();
-            box.className = "warn";
-            box.style.opacity = "1";
-            box.innerHTML = `<p>${error}</p>`;
-            return;
-        }
+  // Switch to scanning UI
+  document.getElementById('idleState').style.display     = 'none';
+  document.getElementById('scanningState').style.display = 'flex';
+  document.getElementById('resultState').style.display   = 'none';
+  document.getElementById('scanBtn').disabled            = true;
 
-        const analysis   = analyzeAll(rawText);
-        const result     = decideResult(analysis.totalScore);
-        const confidence = calculateConfidence(analysis.totalScore);
+  // Run animation then compute
+  runScanAnimation(() => {
+    const structural    = analyzeStructure(text);
+    const vocabulary    = analyzeVocabulary(text);
+    const datasetResult = analyzeDataset(text);
 
-        updateProgress(confidence, result.className);
-        displayResult(result, confidence, analysis, rawText);
+    const total = structural.score * 1.0
+                + vocabulary.score * 0.8
+                + datasetResult.score * 0.6;
 
-    }, 600);
+    displayResult({ structural, vocabulary, datasetResult, total, text });
+    document.getElementById('scanBtn').disabled = false;
+  });
 }
 
 
 // ==============================
-// INIT
+// ACTIONS
 // ==============================
 
-document.addEventListener("DOMContentLoaded", () => {
+function copyResult() {
+  if (!lastResult) { showToast('NO RESULT TO COPY'); return; }
+  const { result, confidence, analysis } = lastResult;
+  const { structural, vocabulary, datasetResult, total, text } = analysis;
 
-    document.getElementById("newsText").addEventListener("keydown", e => {
-        if (e.key === "Enter" && e.ctrlKey) checkNews();
-    });
+  const report = [
+    '=== TRUTHSCAN REPORT ===',
+    `VERDICT:    ${result.text}`,
+    `CONFIDENCE: ${confidence}%`,
+    `SCORE:      ${total.toFixed(2)}`,
+    '',
+    '--- SCORE BREAKDOWN ---',
+    `Structural:  ${structural.score.toFixed(1)}`,
+    `Vocabulary:  ${vocabulary.score.toFixed(1)}`,
+    `Dataset:     ${datasetResult.score.toFixed(1)}`,
+    '',
+    '--- SIGNALS ---',
+    ...structural.signals.map(s => `[${s.type.toUpperCase()}] ${s.msg}`),
+    ...vocabulary.found.fake.map(w => `[FAKE] Word: "${w}"`),
+    ...vocabulary.found.real.map(w => `[REAL] Word: "${w}"`),
+    '',
+    '--- DATASET MATCHES ---',
+    ...(datasetResult.topMatches || []).map(m =>
+      `${Math.round(m.sim*100)}% match [${m.label.toUpperCase()}]: ${m.text.trim()}`
+    ),
+    '',
+    `INPUT: ${text}`,
+    `SCANNED: ${new Date().toUTCString()}`,
+    '=== END REPORT ==='
+  ].join('\n');
 
-    const particlesContainer = document.querySelector(".particles");
-    if (particlesContainer) {
-        for (let i = 0; i < 40; i++) {
-            const span = document.createElement("span");
-            span.style.left              = Math.random() * 100 + "vw";
-            span.style.animationDuration = (6 + Math.random() * 10) + "s";
-            span.style.animationDelay    = (Math.random() * 8) + "s";
-            span.style.width = span.style.height = (4 + Math.random() * 6) + "px";
-            particlesContainer.appendChild(span);
-        }
-    }
-});
+  navigator.clipboard.writeText(report)
+    .then(() => showToast('REPORT COPIED TO CLIPBOARD'))
+    .catch(() => showToast('CLIPBOARD UNAVAILABLE'));
+}
+
+function shareResult() {
+  if (!lastResult) { showToast('NO RESULT TO SHARE'); return; }
+  const { result, confidence } = lastResult;
+  const shareData = {
+    title: 'TruthScan Result',
+    text: `TruthScan verdict: ${result.text} (${confidence}% confidence)\nCheck news at: `,
+    url: window.location.href,
+  };
+  if (navigator.share) {
+    navigator.share(shareData).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(`TruthScan verdict: ${result.text} (${confidence}% confidence) — ${window.location.href}`)
+      .then(() => showToast('LINK COPIED'))
+      .catch(() => showToast('SHARE UNAVAILABLE'));
+  }
+}
