@@ -921,18 +921,6 @@ textarea::placeholder { color: var(--text-muted); line-height: 1.8; }
   .breakdown-grid { grid-template-columns: repeat(2,1fr); }
 }
 
-:root {
-  --bg:#060a12; --bg2:#0b1120; --bg3:#0f1a2e;
-  --panel:#0d1526; --panel2:#111e35;
-  --border:rgba(0,200,255,0.15); --border2:rgba(0,200,255,0.3);
-  --cyan:#00c8ff; --cyan-dim:rgba(0,200,255,0.6); --cyan-glow:rgba(0,200,255,0.2);
-  --red:#ff2d55; --red-dim:rgba(255,45,85,0.6); --red-glow:rgba(255,45,85,0.2);
-  --green:#00ff88; --green-dim:rgba(0,255,136,0.6); --green-glow:rgba(0,255,136,0.15);
-  --amber:#ffb800; --amber-glow:rgba(255,184,0,0.15);
-  --wiki:#ff6b35; --gdelt:#7b61ff; --wikidata:#39c5bb;
-  --text:#cde4f5; --text-dim:rgba(205,228,245,0.5); --text-muted:rgba(205,228,245,0.3);
-  --font-disp:'Rajdhani',sans-serif; --font-mono:'Share Tech Mono',monospace; --font-body:'Exo 2',sans-serif;
-}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
 body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
