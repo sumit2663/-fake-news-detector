@@ -120,7 +120,7 @@ function showToast(msg) {
   setTimeout(() => t.remove(), 2700);
 }
 function renderStats() {
-  document.querySelector('#stat-analyzed .stat-val').textContent = SESSION.analyzed;
+  document.getElementById('stat-analyzed').textContent = SESSION.analyzed;
   document.getElementById('stat-fake').textContent     = SESSION.fake;
   document.getElementById('stat-real').textContent     = SESSION.real;
 }
@@ -619,6 +619,8 @@ async function checkNews() {
   const scanBtn = document.getElementById('scanBtn');
   scanBtn.disabled = true;
   scanBtn.classList.add('loading'); // ✅ ADDED HERE
+  
+  try {
 
   for (let i=1;i<=7;i++) {
     const s = document.getElementById(`step${i}`);
@@ -645,26 +647,26 @@ async function checkNews() {
 
   // Steps 4–6: Live APIs (run in parallel, update UI as each resolves)
   advanceStep(4);
-
-// Start APIs separately
-const wikiPromise = checkWikipedia(text).then(r => {
-  advanceStep(5);
-  return r;
-});
-
-const gdeltPromise = checkGDELT(text).then(r => {
-  advanceStep(6);
-  return r;
-});
-
-const wikidataPromise = checkWikidata(text);
-
-// Wait for all
-const [wikiResult, gdeltResult, wikidataResult] =
-  await Promise.all([wikiPromise, gdeltPromise, wikidataPromise]);
-
-advanceStep(7);
-await delay(200);
+    
+  // Start APIs separately
+    const wikiPromise = checkWikipedia(text).then(r => {
+      advanceStep(5);
+      return r;
+    });
+    
+    const gdeltPromise = checkGDELT(text).then(r => {
+      advanceStep(6);
+      return r;
+    });
+    
+    const wikidataPromise = checkWikidata(text);
+    
+  // Wait for all
+    const [wikiResult, gdeltResult, wikidataResult] =
+      await Promise.all([wikiPromise, gdeltPromise, wikidataPromise]);
+    
+    advanceStep(7);
+    await delay(200);
 
   // Combine scores
   const total =
@@ -676,7 +678,9 @@ await delay(200);
     wikidataResult.score* 0.7;
 
   displayResult({ structural, vocabulary, datasetResult, wikiResult, gdeltResult, wikidataResult, total, text });
+} 
   
+  finally {
   scanBtn.disabled = false;
   scanBtn.classList.remove('loading'); // ✅ ADD THIS LINE
 
