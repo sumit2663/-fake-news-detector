@@ -321,7 +321,7 @@ async function checkGDELT(text) {
   document.getElementById('gdeltStatus').textContent = 'QUERYING';
   document.getElementById('gdeltStatus').className   = 'live-source-status loading';
   document.getElementById('gdeltCard').classList.add('gdelt-active');
-  document.getElementById('gdeltBody').innerHTML     = '<span class="shimmer-text">Searching GDELT global news index (10,000+ outlets)...</span>';
+  document.getElementById('gdeltBody').innerHTML = 'GDELT unavailable — skipping live news check';
   document.getElementById('gdeltArticles').innerHTML = '';
 
   const query    = buildSearchQuery(text);
@@ -339,7 +339,8 @@ async function checkGDELT(text) {
 
   try {
     // GDELT Doc 2.0 API — no key, CORS open
-    const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=artlist&maxrecords=8&timespan=2months&sort=DateDesc&format=json`;
+    const rawUrl = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=artlist&maxrecords=8&timespan=2months&sort=DateDesc&format=json`;
+    const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
 
     if (!res.ok) throw new Error('GDELT HTTP ' + res.status);
@@ -649,23 +650,25 @@ async function checkNews() {
   advanceStep(4);
     
   // Start APIs separately
-    const gdeltPromise = checkGDELT(text).then(r => {
-      advanceStep(6);
-      return r;
-    });
-    
     const wikiPromise = checkWikipedia(text).then(r => {
-      advanceStep(6);
+      advanceStep(5); // ✅ Wikipedia = step 5
       return r;
     });
     
-    const wikidataPromise = checkWikidata(text);
+    const gdeltPromise = checkGDELT(text).then(r => {
+      advanceStep(6); // ✅ GDELT = step 6
+      return r;
+    });
+    
+    const wikidataPromise = checkWikidata(text).then(r => {
+      advanceStep(7); // ✅ Wikidata = step 7
+      return r;
+    });
     
   // Wait for all
     const [wikiResult, gdeltResult, wikidataResult] =
       await Promise.all([wikiPromise, gdeltPromise, wikidataPromise]);
     
-    advanceStep(7);
     await delay(200);
 
   // Combine scores
