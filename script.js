@@ -615,10 +615,17 @@ async function checkNews() {
   document.getElementById('idleState').style.display     = 'none';
   document.getElementById('scanningState').style.display = 'flex';
   document.getElementById('resultState').style.display   = 'none';
-  document.getElementById('scanBtn').disabled            = true;
+
+  const scanBtn = document.getElementById('scanBtn');
+  scanBtn.disabled = true;
+  scanBtn.classList.add('loading'); // ✅ ADDED HERE
+
   for (let i=1;i<=7;i++) {
     const s = document.getElementById(`step${i}`);
-    if (s) { s.className='scan-step'; s.textContent = s.textContent.replace(/^✓ /,'◈ '); }
+    if (s) { 
+      s.className='scan-step'; 
+      s.textContent = s.textContent.replace(/^✓ /,'◈ ');
+    }
   }
 
   // Step 1: Structure
@@ -669,7 +676,11 @@ await delay(200);
     wikidataResult.score* 0.7;
 
   displayResult({ structural, vocabulary, datasetResult, wikiResult, gdeltResult, wikidataResult, total, text });
-  document.getElementById('scanBtn').disabled = false;
+  
+  const scanBtn = document.getElementById('scanBtn');
+  scanBtn.disabled = false;
+  scanBtn.classList.remove('loading'); // ✅ ADD THIS LINE
+
 }
 
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
