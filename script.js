@@ -120,7 +120,7 @@ function showToast(msg) {
   setTimeout(() => t.remove(), 2700);
 }
 function renderStats() {
-  document.getElementById('stat-analyzed').textContent = SESSION.analyzed;
+  document.querySelector('#stat-analyzed .stat-val').textContent = SESSION.analyzed;
   document.getElementById('stat-fake').textContent     = SESSION.fake;
   document.getElementById('stat-real').textContent     = SESSION.real;
 }
@@ -638,13 +638,26 @@ async function checkNews() {
 
   // Steps 4–6: Live APIs (run in parallel, update UI as each resolves)
   advanceStep(4);
-  const [wikiResult, gdeltResult, wikidataResult] = await Promise.all([
-    checkWikipedia(text).then(r => { advanceStep(5); return r; }),
-    checkGDELT(text).then(r => { advanceStep(6); return r; }),
-    checkWikidata(text),
-  ]);
-  advanceStep(7);
-  await delay(200);
+
+// Start APIs separately
+const wikiPromise = checkWikipedia(text).then(r => {
+  advanceStep(5);
+  return r;
+});
+
+const gdeltPromise = checkGDELT(text).then(r => {
+  advanceStep(6);
+  return r;
+});
+
+const wikidataPromise = checkWikidata(text);
+
+// Wait for all
+const [wikiResult, gdeltResult, wikidataResult] =
+  await Promise.all([wikiPromise, gdeltPromise, wikidataPromise]);
+
+advanceStep(7);
+await delay(200);
 
   // Combine scores
   const total =
