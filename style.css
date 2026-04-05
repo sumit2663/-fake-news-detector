@@ -34,9 +34,9 @@
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: var(--font-body);
+  font-family: var(--fb);
   background: var(--bg);
-  color: var(--text);
+  color: var(--txt);
   min-height: 100vh;
   overflow-x: hidden;
   position: relative;
@@ -854,20 +854,6 @@ textarea::placeholder { color: var(--text-muted); line-height: 1.8; }
   .verdict-score { display: none; }
   .breakdown-grid { grid-template-columns: repeat(2,1fr); }
 }
-
-:root{
-  --bg:#060a12;--bg2:#0b1120;--panel:#0d1526;--panel2:#111e35;
-  --b:rgba(0,200,255,.15);--b2:rgba(0,200,255,.3);
-  --c:#00c8ff;--cg:rgba(0,200,255,.18);
-  --red:#ff2d55;--rg:rgba(255,45,85,.18);
-  --grn:#00ff88;--gg:rgba(0,255,136,.14);
-  --amb:#ffb800;--ag:rgba(255,184,0,.14);
-  --txt:#cde4f5;--td:rgba(205,228,245,.5);--tm:rgba(205,228,245,.28);
-  --fd:'Rajdhani',sans-serif;--fm:'Share Tech Mono',monospace;--fb:'Exo 2',sans-serif;
-}
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-body{font-family:var(--fb);background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
-a{color:inherit}
 
 /* BG */
 .grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;
