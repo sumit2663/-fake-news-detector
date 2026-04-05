@@ -57,28 +57,35 @@ body {
 }
 
 .scanlines {
-  position: fixed; inset: 0; z-index: 1000;
-  background: repeating-linear-gradient(
-    0deg, transparent, transparent 2px,
-    rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px
-  );
+  position: fixed;
+  inset: 0;
+  z-index: 5;
   pointer-events: none;
+
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.015) 2px,
+    rgba(0,0,0,0.015) 4px
+  );
+
+  opacity: 0.15; /* default soft */
+}
+
+/* 🔥 scanning mode boost */
+.scanning-state .scanlines {
+  opacity: 0.3;
 }
 
 /* Corner brackets */
 .corner {
-  position: fixed; width: 40px; height: 40px; z-index: 999;
+  position: fixed;
+  width: 40px;
+  height: 40px;
+  z-index: 20;
   pointer-events: none;
 }
-.corner-tl { top: 12px; left: 12px;
-  border-top: 2px solid var(--cyan); border-left: 2px solid var(--cyan); }
-.corner-tr { top: 12px; right: 12px;
-  border-top: 2px solid var(--cyan); border-right: 2px solid var(--cyan); }
-.corner-bl { bottom: 12px; left: 12px;
-  border-bottom: 2px solid var(--cyan); border-left: 2px solid var(--cyan); }
-.corner-br { bottom: 12px; right: 12px;
-  border-bottom: 2px solid var(--cyan); border-right: 2px solid var(--cyan); }
-
 /* ============ HEADER ============ */
 
 .site-header {
@@ -129,27 +136,56 @@ body {
   50% { transform: scaleY(0.05); }
 }
 @keyframes eyeMove {
-  0%,100% { transform: translateX(0); }
-  25% { transform: translateX(3px); }
-  75% { transform: translateX(-3px); }
+  0%,100% { transform: translate(0,0); }
+  25% { transform: translate(3px, -1px); }
+  50% { transform: translate(-2px, 1px); }
+  75% { transform: translate(2px, 2px); }
 }
 @keyframes pupilPulse {
   0%,100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.6; transform: scale(0.8); }
 }
 
+/* ===== PERFORMANCE OPTIMIZATION ===== */
+.eye-inner,
+.pupil,
+.scan-beam,
+.idle-eye-ring,
+.sline,
+.meter-bar {
+  will-change: transform, opacity;
+}
+
 .logo-text { display: flex; flex-direction: column; }
 .logo-name {
   font-family: var(--font-disp);
-  font-size: 1.8rem; font-weight: 700;
-  letter-spacing: 0.12em; line-height: 1;
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1;
   color: var(--text);
+
+  /* 🔥 main glow */
+  text-shadow:
+    0 0 6px rgba(0,200,255,0.3),
+    0 0 12px rgba(0,200,255,0.15);
 }
-.logo-name .accent { color: var(--cyan); }
+
+.logo-name .accent {
+  color: var(--cyan);
+
+  /* ⚡ stronger glow for accent */
+  text-shadow:
+    0 0 6px var(--cyan),
+    0 0 12px rgba(0,200,255,0.6);
+}
+
 .logo-sub {
   font-family: var(--font-mono);
-  font-size: 0.6rem; color: var(--text-dim);
-  letter-spacing: 0.08em; margin-top: 2px;
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  margin-top: 2px;
 }
 
 /* Header stats */
@@ -229,7 +265,17 @@ body {
   position: relative;
   box-shadow: 0 0 30px rgba(0,200,255,0.04), inset 0 1px 0 rgba(255,255,255,0.03);
   animation: panelIn 0.6s ease both;
+   /* 🔥 optional smoothness */
+  transition: all 0.25s ease;
 }
+/* 👇 ADD THIS EXACTLY HERE */
+.panel:hover {
+  border-color: var(--cyan-dim);
+  box-shadow:
+    0 0 40px rgba(0,200,255,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
 .panel-result { animation-delay: 0.15s; }
 
 @keyframes panelIn {
@@ -606,6 +652,11 @@ textarea::placeholder { color: var(--text-muted); line-height: 1.8; }
   font-family: var(--font-mono); font-size: 0.58rem;
   color: var(--text-muted); letter-spacing: 0.08em; min-width: 100px;
 }
+.meter-lbl::after {
+  content: " 0–100%";
+  opacity: 0.3;
+  margin-left: 4px;
+}
 .meter-bar-wrap {
   flex: 1; height: 8px; background: rgba(255,255,255,0.05);
   border-radius: 4px; overflow: hidden; position: relative;
@@ -673,8 +724,20 @@ textarea::placeholder { color: var(--text-muted); line-height: 1.8; }
   from { opacity:0; transform:translateY(6px); }
   to   { opacity:1; transform:translateY(0); }
 }
-.breakdown-cell.positive { border-color: var(--red-dim); background: rgba(255,45,85,0.04); }
-.breakdown-cell.negative { border-color: var(--green-dim); background: rgba(0,255,136,0.03); }
+/* swap colors */
+.breakdown-cell.positive { 
+  border-color: var(--green-dim);
+  background: rgba(0,255,136,0.03);
+}
+
+.breakdown-cell.negative { 
+  border-color: var(--red-dim);
+  background: rgba(255,45,85,0.04);
+}
+.breakdown-cell.neutral {
+  border-color: var(--cyan-dim);
+  background: rgba(0,200,255,0.04);
+}
 .bd-icon { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 4px; }
 .bd-label {
   font-family: var(--font-disp); font-size: 0.55rem;
