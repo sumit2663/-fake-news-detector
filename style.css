@@ -4,30 +4,27 @@
    Palette: Deep navy/black + electric cyan + red alert
    ============================================ */
 
-:root {
-  --bg:         #060a12;
-  --bg2:        #0b1120;
-  --bg3:        #0f1a2e;
-  --panel:      #0d1526;
-  --panel2:     #111e35;
-  --border:     rgba(0,200,255,0.15);
-  --border2:    rgba(0,200,255,0.3);
-  --cyan:       #00c8ff;
-  --cyan-dim:   rgba(0,200,255,0.6);
-  --cyan-glow:  rgba(0,200,255,0.2);
-  --red:        #ff2d55;
-  --red-dim:    rgba(255,45,85,0.6);
-  --red-glow:   rgba(255,45,85,0.2);
-  --green:      #00ff88;
-  --green-dim:  rgba(0,255,136,0.6);
-  --green-glow: rgba(0,255,136,0.15);
-  --amber:      #ffb800;
-  --text:       #cde4f5;
-  --text-dim:   rgba(205,228,245,0.5);
-  --text-muted: rgba(205,228,245,0.3);
-  --font-disp:  'Rajdhani', sans-serif;
-  --font-mono:  'Share Tech Mono', monospace;
-  --font-body:  'Exo 2', sans-serif;
+:root{
+  --bg:#060a12;
+  --bg2:#0b1120;
+  --panel:#0d1526;
+  --panel2:#111e35;
+  --b:rgba(0,200,255,.15);
+  --b2:rgba(0,200,255,.3);
+  --c:#00c8ff;
+  --cg:rgba(0,200,255,.18);
+  --red:#ff2d55;
+  --rg:rgba(255,45,85,.18);
+  --grn:#00ff88;
+  --gg:rgba(0,255,136,.14);
+  --amb:#ffb800;
+  --ag:rgba(255,184,0,.14);
+  --txt:#cde4f5;
+  --td:rgba(205,228,245,.5);
+  --tm:rgba(205,228,245,.28);
+  --fd:'Rajdhani',sans-serif;
+  --fm:'Share Tech Mono',monospace;
+  --fb:'Exo 2',sans-serif;
 }
 
 *, *::before, *::after {
