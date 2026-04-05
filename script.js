@@ -649,12 +649,12 @@ async function checkNews() {
   advanceStep(4);
     
   // Start APIs separately
-    const wikiPromise = checkWikipedia(text).then(r => {
-      advanceStep(5);
+    const gdeltPromise = checkGDELT(text).then(r => {
+      advanceStep(6);
       return r;
     });
     
-    const gdeltPromise = checkGDELT(text).then(r => {
+    const wikiPromise = checkWikipedia(text).then(r => {
       advanceStep(6);
       return r;
     });
