@@ -677,7 +677,6 @@ await delay(200);
 
   displayResult({ structural, vocabulary, datasetResult, wikiResult, gdeltResult, wikidataResult, total, text });
   
-  const scanBtn = document.getElementById('scanBtn');
   scanBtn.disabled = false;
   scanBtn.classList.remove('loading'); // ✅ ADD THIS LINE
 
