@@ -28,6 +28,11 @@
   --font-disp:  'Rajdhani', sans-serif;
   --font-mono:  'Share Tech Mono', monospace;
   --font-body:  'Exo 2', sans-serif;
+   /* ADD BELOW existing color variables */
+   --wiki: #ff6b35;
+   --gdelt: #7b61ff;
+   --wikidata: #39c5bb;
+   --amber-glow: rgba(255,184,0,0.2);
 }
 
 *, *::before, *::after {
@@ -921,18 +926,6 @@ textarea::placeholder { color: var(--text-muted); line-height: 1.8; }
   .breakdown-grid { grid-template-columns: repeat(2,1fr); }
 }
 
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
-html{scroll-behavior:smooth;}
-body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
-
-.grid-bg{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(0,200,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;}
-.scanlines{position:fixed;inset:0;z-index:1000;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);pointer-events:none;}
-.corner{position:fixed;width:36px;height:36px;z-index:999;pointer-events:none;}
-.corner-tl{top:10px;left:10px;border-top:2px solid var(--cyan);border-left:2px solid var(--cyan);}
-.corner-tr{top:10px;right:10px;border-top:2px solid var(--cyan);border-right:2px solid var(--cyan);}
-.corner-bl{bottom:10px;left:10px;border-bottom:2px solid var(--cyan);border-left:2px solid var(--cyan);}
-.corner-br{bottom:10px;right:10px;border-bottom:2px solid var(--cyan);border-right:2px solid var(--cyan);}
-
 /* HEADER */
 .site-header{position:relative;z-index:10;border-bottom:1px solid var(--border2);background:linear-gradient(180deg,rgba(0,200,255,0.05) 0%,transparent 100%);}
 .header-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;flex-wrap:wrap;gap:10px;}
@@ -1240,3 +1233,11 @@ textarea::placeholder{color:var(--text-muted);line-height:1.8;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
 ::-webkit-scrollbar-thumb:hover{background:var(--cyan-dim);}
+
+/* PERFORMANCE: Reduce animations if user prefers */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
