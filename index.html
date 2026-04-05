@@ -59,11 +59,11 @@
 </div>
 
 <!-- MAIN -->
-<main class="main-layout">
+<main class="layout">
 
   <!-- INPUT -->
   <section class="panel">
-    <div class="panel-header"><span class="ptag">INPUT</span><span class="ptitle">URL OR TEXT</span><div class="pdot blink"></div></div>
+    <div class="panel-hdr"><span class="ptag">INPUT</span><span class="ptitle">URL OR TEXT</span><div class="pdot blink"></div></div>
 
     <!-- URL MODE -->
     <div class="mode-tabs">
@@ -103,16 +103,16 @@
     </div>
 
     <div class="btn-row">
-      <button class="btn-scan" id="scanBtn" onclick="checkNews()">
+      <button class="btn-primary" id="scanBtn" onclick="checkNews()">
         <span id="scanIcon">◈</span> <span id="scanText">SCAN + VERIFY</span>
         <div class="btn-sweep"></div>
       </button>
-      <button class="btn-secondary" onclick="clearAll()">✕ CLEAR</button>
-      <button class="btn-secondary" onclick="loadExample()">⚡ EXAMPLE</button>
+      <button class="btn-sec" onclick="clearAll()">✕ CLEAR</button>
+      <button class="btn-sec" onclick="loadExample()">⚡ EXAMPLE</button>
     </div>
 
     <!-- HISTORY -->
-    <div class="history-section">
+    <div class="hist-section">
       <div class="hist-hdr"><span>HISTORY</span><button class="tiny-btn" onclick="clearHistory()">CLEAR</button></div>
       <div id="histList"><div class="hist-empty">No scans yet</div></div>
     </div>
@@ -120,10 +120,10 @@
 
   <!-- RESULTS -->
   <section class="panel panel-right">
-    <div class="panel-header"><span class="ptag">OUTPUT</span><span class="ptitle">VERIFICATION RESULT</span><div class="pdot" id="rdot"></div></div>
+    <div class="panel-hdr"><span class="ptag">OUTPUT</span><span class="ptitle">VERIFICATION RESULT</span><div class="pdot" id="rdot"></div></div>
 
     <!-- IDLE -->
-    <div id="idleState" class="idle-state">
+    <div id="idleState" class="idle">
       <div class="idle-rings">
         <div class="ir ir1"></div><div class="ir ir2"></div><div class="ir ir3"></div>
         <div class="ir-core">AWAITING<br>INPUT</div>
@@ -136,7 +136,7 @@
     </div>
 
     <!-- SCANNING -->
-    <div id="scanState" class="scanning-state" style="display:none">
+    <div id="scanState" class="scanning" style="display:none">
       <div class="scan-beam"></div>
       <div class="bars">
         <div class="bar b1"></div><div class="bar b2"></div><div class="bar b3"></div>
@@ -154,7 +154,8 @@
     </div>
 
     <!-- RESULT -->
-    <div id="resultState" class="result-state" style="display:none">
+    <div id="resultState" style="display:none">
+
       <!-- VERDICT -->
       <div class="verdict-wrap" id="verdictWrap">
         <div class="v-icon-wrap">
