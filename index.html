@@ -47,6 +47,8 @@
     </div>
   </header>
 
+  <div class="api-status-bar">...</div>
+  
   <!-- MAIN LAYOUT -->
   <main class="main-layout">
 
@@ -128,10 +130,13 @@
           <div class="sline"></div><div class="sline"></div><div class="sline"></div>
         </div>
         <div class="scan-status">
-          <div class="scan-step active" id="step1">◈ PARSING STRUCTURE...</div>
+          <div class="scan-step" id="step1">◈ PARSING STRUCTURE...</div>
           <div class="scan-step" id="step2">◈ SCORING VOCABULARY...</div>
-          <div class="scan-step" id="step3">◈ MATCHING DATASET...</div>
-          <div class="scan-step" id="step4">◈ COMPUTING VERDICT...</div>
+          <div class="scan-step" id="step3">◈ MATCHING LOCAL DATASET...</div>
+          <div class="scan-step" id="step4">◈ QUERYING WIKIPEDIA API...</div>
+          <div class="scan-step" id="step5">◈ CHECKING GDELT LIVE NEWS...</div>
+          <div class="scan-step" id="step6">◈ VERIFYING WIKIDATA FACTS...</div>
+          <div class="scan-step" id="step7">◈ COMPUTING FINAL VERDICT...</div>
         </div>
       </div>
 
@@ -182,7 +187,7 @@
         <!-- SCORE BREAKDOWN -->
         <div class="breakdown-section">
           <div class="section-label">SCORE BREAKDOWN</div>
-          <div class="breakdown-grid">
+          <div class="breakdown-grid six">
             <div class="breakdown-cell" id="bdStruct">
               <div class="bd-icon">⬡</div>
               <div class="bd-label">STRUCTURAL</div>
@@ -197,13 +202,69 @@
               <div class="bd-icon">◈</div>
               <div class="bd-label">DATASET</div>
               <div class="bd-val" id="bdDatasetVal">—</div>
+            </div><div class="breakdown-cell" id="bdWiki">
+              <div class="bd-icon wiki-icon">W</div>
+              <div class="bd-label">WIKIPEDIA</div>
+              <div class="bd-val" id="bdWikiVal">—</div>
             </div>
+          <div class="breakdown-cell" id="bdGdelt">
+            <div class="bd-icon">⦿</div>
+            <div class="bd-label">GDELT</div>
+            <div class="bd-val" id="bdGdeltVal">—</div>
+          </div>
             <div class="breakdown-cell" id="bdTotal">
               <div class="bd-icon">◆</div>
               <div class="bd-label">TOTAL</div>
               <div class="bd-val" id="bdTotalVal">—</div>
             </div>
           </div>
+        </div>
+
+        <!-- 🔥 LIVE SOURCE VERIFICATION -->
+        <div class="live-section">
+          
+          <div class="section-label">
+            LIVE SOURCE VERIFICATION <span class="live-badge">● LIVE</span>
+          </div>
+        <!-- WIKIPEDIA -->
+          <div class="live-card" id="wikiCard">
+            <div class="live-card-header">
+              <span class="live-source-tag wiki-tag">W</span>
+              <span class="live-source-name">WIKIPEDIA REST API</span>
+              <span class="live-source-status" id="wikiStatus">PENDING</span>
+            </div>
+            <div class="live-card-body" id="wikiBody">
+              <span class="shimmer-text">Querying Wikipedia...</span>
+            </div>
+            <div class="live-entities" id="wikiEntities"></div>
+          </div>
+        
+        <!-- GDELT -->
+          <div class="live-card" id="gdeltCard">
+            <div class="live-card-header">
+              <span class="live-source-tag gdelt-tag">G</span>
+              <span class="live-source-name">GDELT NEWS</span>
+              <span class="live-source-status" id="gdeltStatus">PENDING</span>
+            </div>
+            <div class="live-card-body" id="gdeltBody">
+              <span class="shimmer-text">Querying GDELT...</span>
+            </div>
+            <div class="gdelt-articles" id="gdeltArticles"></div>
+          </div>
+          
+        <!-- WIKIDATA -->
+          <div class="live-card" id="wikidataCard">
+            <div class="live-card-header">
+              <span class="live-source-tag wikidata-tag">D</span>
+              <span class="live-source-name">WIKIDATA</span>
+              <span class="live-source-status" id="wikidataStatus">PENDING</span>
+            </div>
+            <div class="live-card-body" id="wikidataBody">
+              <span class="shimmer-text">Querying Wikidata...</span>
+            </div>
+            <div class="wikidata-facts" id="wikidataFacts"></div>
+          </div>
+        
         </div>
 
         <!-- SIGNALS -->
