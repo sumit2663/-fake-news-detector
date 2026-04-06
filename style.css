@@ -415,3 +415,106 @@ textarea::placeholder { color:var(--tm); line-height:1.8; }
   .header-inner { flex-direction:column; align-items:flex-start; }
   .verdict-score { display:none; }
 }
+
+/* =========================================
+   TRUTHSCAN v3.2 ULTRA — VISUAL UPGRADE
+========================================= */
+
+/* 🌌 Animated grid (very subtle) */
+.grid-bg {
+  animation: gridMove 25s linear infinite;
+}
+@keyframes gridMove {
+  from { background-position: 0 0; }
+  to { background-position: 42px 42px; }
+}
+
+/* 🧊 Glass panels */
+.panel {
+  backdrop-filter: blur(6px);
+  background: linear-gradient(
+    135deg,
+    rgba(13,21,38,.9),
+    rgba(17,30,53,.7)
+  );
+  box-shadow:
+    0 0 25px rgba(0,200,255,.08),
+    inset 0 0 12px rgba(0,200,255,.05);
+  transition: all .25s ease;
+}
+.panel:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0,200,255,.4);
+}
+
+/* ⚡ Neon button boost */
+.btn-scan {
+  position: relative;
+}
+.btn-scan:hover {
+  box-shadow:
+    0 0 20px rgba(0,200,255,.4),
+    0 0 40px rgba(0,200,255,.2);
+}
+.btn-scan:active {
+  transform: scale(.96);
+}
+
+/* 💡 Glow dot stronger */
+.panel-indicator.blink {
+  box-shadow: 0 0 10px var(--grn), 0 0 20px var(--grn);
+}
+
+/* 📊 Stats breathing effect */
+.stat-val {
+  animation: statPulse 2.5s infinite;
+}
+@keyframes statPulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: .65; }
+}
+
+/* 🧬 Input focus stronger */
+.url-input-wrap:focus-within,
+.input-wrap:focus-within {
+  box-shadow: 0 0 20px rgba(0,200,255,.25);
+}
+
+/* 🔍 Scan beam upgrade */
+.scan-beam {
+  height: 3px;
+  filter: blur(1px);
+  opacity: .9;
+}
+
+/* 🧾 Smooth fade-in for sections */
+.section-block,
+.breakdown-section,
+.meters-section {
+  animation: fadeUp .4s ease;
+}
+@keyframes fadeUp {
+  from { opacity:0; transform: translateY(6px); }
+  to { opacity:1; transform: translateY(0); }
+}
+
+/* ✨ Buttons secondary polish */
+.btn-secondary:hover {
+  box-shadow: 0 0 10px rgba(0,200,255,.2);
+}
+
+/* 🧠 Idle text improvement */
+.idle-text {
+  letter-spacing: .04em;
+}
+
+/* 🔲 Tabs spacing fix */
+.mode-tabs {
+  gap: 4px;
+}
+
+/* 📡 Source items alignment fix */
+.src-item {
+  justify-content: space-between;
+  min-width: 120px;
+}
