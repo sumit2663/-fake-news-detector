@@ -341,14 +341,14 @@ textarea::placeholder { color:var(--tm); line-height:1.8; }
 .wiki-meta { font-family:var(--fm); font-size:.55rem; margin-top:4px; color:var(--tm); }
 .wiki-none { font-family:var(--fm); font-size:.63rem; color:var(--red); padding:8px; }
 
-/* ── GDELT ── */
-.gdelt-results { display:flex; flex-direction:column; gap:5px; }
-.gdelt-item { padding:7px 11px; background:var(--bg2); border-left:3px solid #7b61ff; border-radius:0 4px 4px 0; animation:slideIn .3s ease both; }
-.gdelt-hed  { font-family:var(--fm); font-size:.65rem; color:var(--td); line-height:1.4; }
-.gdelt-hed a { color:#9d8fff; text-decoration:none; }
-.gdelt-hed a:hover { text-decoration:underline; }
-.gdelt-meta { font-family:var(--fm); font-size:.55rem; color:var(--tm); margin-top:3px; }
-.gdelt-none { font-family:var(--fm); font-size:.63rem; color:var(--red); padding:8px; }
+/* ── NEWSDATA.IO ── */
+.newsdata-results { display:flex; flex-direction:column; gap:5px; }
+.newsdata-item { padding:7px 11px; background:var(--bg2); border-left:3px solid #7b61ff; border-radius:0 4px 4px 0; animation:slideIn .3s ease both; }
+.newsdata-hed  { font-family:var(--fm); font-size:.65rem; color:var(--td); line-height:1.4; }
+.newsdata-hed a { color:#9d8fff; text-decoration:none; }
+.newsdata-hed a:hover { text-decoration:underline; }
+.newsdata-meta { font-family:var(--fm); font-size:.55rem; color:var(--tm); margin-top:3px; }
+.newsdata-none { font-family:var(--fm); font-size:.63rem; color:var(--red); padding:8px; }
 
 /* ── CLAIMBUSTER ── */
 .claim-results { display:flex; flex-direction:column; gap:5px; }
