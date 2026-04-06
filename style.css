@@ -369,7 +369,11 @@ textarea::placeholder { color:var(--tm); line-height:1.8; }
   position:relative;
   overflow:hidden;
   animation:verdictIn .4s ease;
-  backdrop-filter: blur(4px); /* ADD HERE */
+
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  will-change: backdrop-filter;
+  background: rgba(13,21,38,0.6);
 }
 @keyframes verdictIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
 .verdict-banner.fake-v { background:linear-gradient(135deg, rgba(255,45,85,.12), transparent 60%); }
