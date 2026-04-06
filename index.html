@@ -34,19 +34,42 @@
         <span class="logo-sub">// REAL-TIME MULTI-SOURCE FACT VERIFICATION ENGINE</span>
       </div>
     </div>
-    <div class="header-stats">
-      <div class="stat-pill"><span class="stat-val" id="hs-total">0</span><span class="stat-lbl">SCANNED</span></div>
-      <div class="stat-pill fake-stat"><span class="stat-val" id="hs-fake">0</span><span class="stat-lbl">FAKE</span></div>
-      <div class="stat-pill real-stat"><span class="stat-val" id="hs-real">0</span><span class="stat-lbl">REAL</span></div>
+    <div class="header-right">
+      <div class="header-stats">
+        <div class="stat-pill">
+          <span class="stat-val" id="hs-total">0</span>
+          <span class="stat-lbl">SCANNED</span>
+        </div>
+    <div class="stat-pill fake-stat">
+      <span class="stat-val" id="hs-fake">0</span>
+      <span class="stat-lbl">FAKE</span>
+    </div>
+    <div class="stat-pill real-stat">
+      <span class="stat-val" id="hs-real">0</span>
+      <span class="stat-lbl">REAL</span>
     </div>
   </div>
+
+  <!-- ✅ BUTTON HERE -->
+  <button class="api-config-btn" onclick="toggleApiConfig()">
+    ⚙ API KEYS
+  </button>
+</div>
   <div class="header-ticker">
     <span class="ticker-label">● LIVE</span>
     <div class="ticker-track">
-      <span class="ticker-content" id="ticker">TRUTHSCAN ONLINE — REAL ARTICLE FETCHING VIA CORS PROXY — DOMAIN REPUTATION DB (500+ SOURCES) — WIKIPEDIA CROSS-REFERENCE — GDELT LIVE NEWS — CLAIMBUSTER AI — PASTE URL OR TEXT TO BEGIN</span>
+      <span class="ticker-content" id="ticker">TRUTHSCAN ONLINE — REAL ARTICLE FETCHING VIA CORS PROXY — DOMAIN REPUTATION DB (500+ SOURCES) — WIKIPEDIA CROSS-REFERENCE — NEWSDATA.IO LIVE NEWS — CLAIMBUSTER AI — PASTE URL OR TEXT TO BEGIN</span>
     </div>
   </div>
 </header>
+
+  <div class="api-config-panel" id="apiConfigPanel" style="display:none">
+  <input type="password" id="key-newsdata" placeholder="Enter NewsData API key">
+  <button onclick="saveKey('newsdata')">Save</button>
+
+  <input type="password" id="key-claimbuster" placeholder="Enter ClaimBuster API key">
+  <button onclick="saveKey('claimbuster')">Save</button>
+</div>
 
 <!-- SOURCE STATUS BAR -->
 <div class="source-bar">
@@ -54,7 +77,11 @@
   <div class="src-item" id="src-fetch"><span class="src-dot"></span><span class="src-label">ARTICLE FETCH</span><span class="src-status" id="ss-fetch">READY</span></div>
   <div class="src-item" id="src-domain"><span class="src-dot"></span><span class="src-label">DOMAIN DB</span><span class="src-status" id="ss-domain">READY</span></div>
   <div class="src-item" id="src-wiki"><span class="src-dot"></span><span class="src-label">WIKIPEDIA</span><span class="src-status" id="ss-wiki">READY</span></div>
-  <div class="src-item" id="src-gdelt"><span class="src-dot"></span><span class="src-label">GDELT NEWS</span><span class="src-status" id="ss-gdelt">READY</span></div>
+  <div class="src-item" id="src-newsdata">
+  <span class="src-dot"></span>
+  <span class="src-label">NEWSDATA.IO</span>
+  <span class="src-status" id="ss-newsdata">NEEDS KEY</span>
+</div>
   <div class="src-item" id="src-claim"><span class="src-dot"></span><span class="src-label">CLAIMBUSTER AI</span><span class="src-status" id="ss-claim">READY</span></div>
 </div>
 
@@ -161,7 +188,7 @@
         <div class="scan-step" id="s2">◈ Checking domain reputation...</div>
         <div class="scan-step" id="s3">◈ Running structural analysis...</div>
         <div class="scan-step" id="s4">◈ Querying Wikipedia API...</div>
-        <div class="scan-step" id="s5">◈ Searching GDELT live news...</div>
+        <div class="scan-step" id="s5">◈ Searching NEWSDATA.IO LIVE NEWS...</div>
         <div class="scan-step" id="s6">◈ ClaimBuster AI scoring...</div>
         <div class="scan-step" id="s7">◈ Computing final verdict...</div>
       </div>
@@ -214,10 +241,14 @@
         <div class="wiki-results" id="wikiResults"><div class="loading-msg">Awaiting scan...</div></div>
       </div>
 
-      <!-- GDELT -->
+      <!-- NewsData.io -->
       <div class="section-block">
-        <div class="section-label">GDELT LIVE NEWS INDEX <span class="live-dot">● LIVE</span></div>
-        <div class="gdelt-results" id="gdeltResults"><div class="loading-msg">Awaiting scan...</div></div>
+        <div class="section-label">
+          NEWSDATA.IO — LIVE NEWS SEARCH <span class="live-dot">● LIVE</span>
+        </div>
+        <div class="newsdata-results" id="newsdataResults">
+          <div class="loading-msg">Awaiting scan...</div>
+        </div>
       </div>
 
       <!-- CLAIMBUSTER -->
@@ -250,14 +281,14 @@
     <div class="how-card"><div class="how-num">01</div><div class="how-icon">🔗</div><div class="how-title">REAL ARTICLE FETCHING</div><div class="how-desc">Paste any news URL — fetches the full article via <code>allorigins.win</code> CORS proxy, extracts headline, body text, author, and publish date. Works on any public URL.</div></div>
     <div class="how-card"><div class="how-num">02</div><div class="how-icon">🏷</div><div class="how-title">DOMAIN REPUTATION</div><div class="how-desc">Checks the domain against <strong>500+ known fake, satire, and trusted sources</strong> compiled from MBFC and NewsGuard research. Strongest single credibility signal.</div></div>
     <div class="how-card"><div class="how-num">03</div><div class="how-icon">📖</div><div class="how-title">WIKIPEDIA API (LIVE)</div><div class="how-desc">Extracts named entities and queries Wikipedia's <code>prop=extracts</code> API live, retrieving real article paragraphs to cross-reference claims and verify topics.</div></div>
-    <div class="how-card"><div class="how-num">04</div><div class="how-icon">📡</div><div class="how-title">GDELT LIVE NEWS</div><div class="how-desc">Searches the <strong>GDELT Project</strong> — live index of 10,000+ global outlets. Story covered by real news = credible. Zero results = suspicious. Shows clickable real articles.</div></div>
+    <div class="how-card"><div class="how-num">04</div><div class="how-icon">📡</div><div class="how-title">NEWSDATA.IO LIVE NEWS</div><div class="how-desc">Searches the <strong>NewsData.io</strong> — live index of 10,000+ global outlets. Story covered by real news = credible. Zero results = suspicious. Shows clickable real articles.</div></div>
     <div class="how-card"><div class="how-num">05</div><div class="how-icon">🤖</div><div class="how-title">CLAIMBUSTER AI</div><div class="how-desc">Sends sentences to <strong>ClaimBuster</strong> by UT Arlington — a real AI that scores each sentence 0–100% for check-worthiness. High scores = strong factual claims needing verification.</div></div>
   </div>
 </section>
 
 <footer class="site-footer">
   <span>TRUTHSCAN v3.1</span><span class="footer-sep">//</span>
-  <span>allorigins · Wikipedia API · GDELT Project · ClaimBuster AI · Domain DB 500+</span>
+  <span>allorigins · Wikipedia API · NewsData.io · ClaimBuster AI · Domain DB 500+</span>
   <span class="footer-sep">//</span><span id="clock"></span>
 </footer>
 
