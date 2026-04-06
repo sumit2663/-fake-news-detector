@@ -34,11 +34,13 @@ body { font-family:var(--fb); background:var(--bg); color:var(--txt); min-height
 
 /* ── BACKGROUND ── */
 .grid-bg {
-  position:fixed; inset:0; z-index:0; pointer-events:none;
-  background-image:
-    linear-gradient(rgba(0,200,255,.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,200,255,.025) 1px, transparent 1px);
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background-image: ...;
   background-size:42px 42px;
+  animation: gridMove 25s linear infinite;
 }
 
 /* REDUCED: scanlines much subtler — barely perceptible */
