@@ -9,69 +9,72 @@
 </head>
 <body>
 
+<!-- REDUCED: scanlines opacity much lower, corners smaller/subtler -->
 <div class="scanlines"></div>
 <div class="grid-bg"></div>
-<div class="corner corner-tl"></div><div class="corner corner-tr"></div>
-<div class="corner corner-bl"></div><div class="corner corner-br"></div>
+<div class="corner corner-tl"></div>
+<div class="corner corner-tr"></div>
+<div class="corner corner-bl"></div>
+<div class="corner corner-br"></div>
 
 <!-- HEADER -->
 <header class="site-header">
   <div class="header-inner">
     <div class="logo-block">
-      <div class="eye-anim">
-        <div class="eye-ring r1"></div><div class="eye-ring r2"></div>
-        <div class="eye-ring r3"></div><div class="eye-core"></div>
+      <!-- RESTORED: original eye-outer/eye-inner/pupil structure -->
+      <div class="logo-icon">
+        <div class="eye-outer">
+          <div class="eye-inner">
+            <div class="pupil"></div>
+          </div>
+        </div>
       </div>
-      <div>
-        <div class="logo-name">TRUTH<span class="c">SCAN</span> <span class="ver">v3.1</span></div>
-        <div class="logo-sub">REAL-TIME MULTI-SOURCE FACT VERIFICATION ENGINE</div>
+      <div class="logo-text">
+        <span class="logo-name">TRUTH<span class="accent">SCAN</span> <span class="ver">v3.1</span></span>
+        <span class="logo-sub">// REAL-TIME MULTI-SOURCE FACT VERIFICATION ENGINE</span>
       </div>
     </div>
-    <div class="hstats">
-      <div class="hstat"><span id="hs-total">0</span><small>SCANNED</small></div>
-      <div class="hstat red"><span id="hs-fake">0</span><small>FAKE</small></div>
-      <div class="hstat green"><span id="hs-real">0</span><small>REAL</small></div>
+    <div class="header-stats">
+      <div class="stat-pill"><span class="stat-val" id="hs-total">0</span><span class="stat-lbl">SCANNED</span></div>
+      <div class="stat-pill fake-stat"><span class="stat-val" id="hs-fake">0</span><span class="stat-lbl">FAKE</span></div>
+      <div class="stat-pill real-stat"><span class="stat-val" id="hs-real">0</span><span class="stat-lbl">REAL</span></div>
     </div>
   </div>
-  <div class="ticker-bar">
-    <span class="tick-live">● LIVE</span>
-    <div class="ticker-wrap"><span class="ticker" id="ticker">TRUTHSCAN ONLINE — REAL ARTICLE FETCHING VIA CORS PROXY — DOMAIN REPUTATION DATABASE — WIKIPEDIA CROSS-REFERENCE — CLAIMBUSTER AI — GDELT NEWS INDEX — PASTE URL OR TEXT TO BEGIN</span></div>
+  <div class="header-ticker">
+    <span class="ticker-label">● LIVE</span>
+    <div class="ticker-track">
+      <span class="ticker-content" id="ticker">TRUTHSCAN ONLINE — REAL ARTICLE FETCHING VIA CORS PROXY — DOMAIN REPUTATION DB (500+ SOURCES) — WIKIPEDIA CROSS-REFERENCE — GDELT LIVE NEWS — CLAIMBUSTER AI — PASTE URL OR TEXT TO BEGIN</span>
+    </div>
   </div>
 </header>
 
-<!-- SOURCE STATUS -->
+<!-- SOURCE STATUS BAR -->
 <div class="source-bar">
-  <div class="src-item" id="src-fetch">
-    <span class="src-dot"></span><span class="src-label">ARTICLE FETCH</span><span class="src-status" id="ss-fetch">READY</span>
-  </div>
-  <div class="src-item" id="src-domain">
-    <span class="src-dot"></span><span class="src-label">DOMAIN CHECK</span><span class="src-status" id="ss-domain">READY</span>
-  </div>
-  <div class="src-item" id="src-wiki">
-    <span class="src-dot"></span><span class="src-label">WIKIPEDIA</span><span class="src-status" id="ss-wiki">READY</span>
-  </div>
-  <div class="src-item" id="src-gdelt">
-    <span class="src-dot"></span><span class="src-label">GDELT NEWS</span><span class="src-status" id="ss-gdelt">READY</span>
-  </div>
-  <div class="src-item" id="src-claim">
-    <span class="src-dot"></span><span class="src-label">CLAIMBUSTER AI</span><span class="src-status" id="ss-claim">READY</span>
-  </div>
+  <span class="src-bar-lbl">LIVE SOURCES</span>
+  <div class="src-item" id="src-fetch"><span class="src-dot"></span><span class="src-label">ARTICLE FETCH</span><span class="src-status" id="ss-fetch">READY</span></div>
+  <div class="src-item" id="src-domain"><span class="src-dot"></span><span class="src-label">DOMAIN DB</span><span class="src-status" id="ss-domain">READY</span></div>
+  <div class="src-item" id="src-wiki"><span class="src-dot"></span><span class="src-label">WIKIPEDIA</span><span class="src-status" id="ss-wiki">READY</span></div>
+  <div class="src-item" id="src-gdelt"><span class="src-dot"></span><span class="src-label">GDELT NEWS</span><span class="src-status" id="ss-gdelt">READY</span></div>
+  <div class="src-item" id="src-claim"><span class="src-dot"></span><span class="src-label">CLAIMBUSTER AI</span><span class="src-status" id="ss-claim">READY</span></div>
 </div>
 
 <!-- MAIN -->
-<main class="layout">
+<main class="main-layout">
 
-  <!-- INPUT -->
-  <section class="panel">
-    <div class="panel-hdr"><span class="ptag">INPUT</span><span class="ptitle">URL OR TEXT</span><div class="pdot blink"></div></div>
+  <!-- INPUT PANEL -->
+  <section class="panel panel-input">
+    <div class="panel-header">
+      <span class="panel-tag">INPUT</span>
+      <span class="panel-title">URL OR TEXT</span>
+      <div class="panel-indicator blink"></div>
+    </div>
 
-    <!-- URL MODE -->
     <div class="mode-tabs">
       <button class="mtab active" id="tab-url" onclick="switchMode('url')">🔗 URL / LINK</button>
       <button class="mtab" id="tab-text" onclick="switchMode('text')">📝 TEXT / HEADLINE</button>
     </div>
 
-    <!-- URL INPUT -->
+    <!-- URL MODE -->
     <div id="mode-url" class="mode-panel">
       <div class="url-input-wrap">
         <span class="url-prefix">URL</span>
@@ -84,17 +87,19 @@
           <span class="fp-rep" id="fpRep"></span>
         </div>
         <div class="fp-title" id="fpTitle"></div>
-        <div class="fp-text" id="fpText"></div>
+        <div class="fp-body" id="fpText"></div>
         <div class="fp-meta" id="fpMeta"></div>
       </div>
       <div class="fetch-error" id="fetchError" style="display:none"></div>
     </div>
 
-    <!-- TEXT INPUT -->
+    <!-- TEXT MODE -->
     <div id="mode-text" class="mode-panel" style="display:none">
       <div class="input-wrap">
-        <div class="ln" id="lineNumbers">1</div>
-        <textarea id="newsText" placeholder="Paste headline or article text here..." oninput="updateLN();updateCC();" spellcheck="false"></textarea>
+        <div class="input-line-numbers" id="lineNumbers">1</div>
+        <textarea id="newsText"
+          placeholder="Paste headline, article, or social media post here...&#10;&#10;Live APIs will check:&#10;• Wikipedia — entity &amp; fact cross-reference&#10;• GDELT — real-time global news presence&#10;• ClaimBuster AI — sentence-level claim scoring&#10;• Domain DB — 500+ fake/trusted sources"
+          oninput="updateLN();updateCC();" spellcheck="false"></textarea>
       </div>
       <div class="input-meta">
         <span id="charCount">0 chars</span>
@@ -102,127 +107,136 @@
       </div>
     </div>
 
-    <div class="btn-row">
-      <button class="btn-primary" id="scanBtn" onclick="checkNews()">
-        <span id="scanIcon">◈</span> <span id="scanText">SCAN + VERIFY</span>
-        <div class="btn-sweep"></div>
+    <div class="button-row">
+      <button class="btn-scan" id="scanBtn" onclick="checkNews()">
+        <span class="btn-icon" id="scanIcon">◈</span>
+        <span id="scanText">SCAN + VERIFY LIVE</span>
+        <div class="btn-glow"></div>
       </button>
-      <button class="btn-sec" onclick="clearAll()">✕ CLEAR</button>
-      <button class="btn-sec" onclick="loadExample()">⚡ EXAMPLE</button>
+      <button class="btn-secondary" onclick="clearAll()">✕ CLEAR</button>
+      <button class="btn-secondary" onclick="loadExample()">⚡ EXAMPLE</button>
     </div>
 
-    <!-- HISTORY -->
-    <div class="hist-section">
-      <div class="hist-hdr"><span>HISTORY</span><button class="tiny-btn" onclick="clearHistory()">CLEAR</button></div>
-      <div id="histList"><div class="hist-empty">No scans yet</div></div>
+    <div class="history-section">
+      <div class="history-header"><span>SCAN HISTORY</span><button class="btn-tiny" onclick="clearHistory()">CLEAR</button></div>
+      <div class="history-list" id="histList"><div class="history-empty">No scans yet</div></div>
     </div>
   </section>
 
-  <!-- RESULTS -->
-  <section class="panel panel-right">
-    <div class="panel-hdr"><span class="ptag">OUTPUT</span><span class="ptitle">VERIFICATION RESULT</span><div class="pdot" id="rdot"></div></div>
+  <!-- RESULT PANEL -->
+  <section class="panel panel-result">
+    <div class="panel-header">
+      <span class="panel-tag">OUTPUT</span>
+      <span class="panel-title">VERIFICATION RESULT</span>
+      <div class="panel-indicator" id="rdot"></div>
+    </div>
 
     <!-- IDLE -->
-    <div id="idleState" class="idle">
-      <div class="idle-rings">
-        <div class="ir ir1"></div><div class="ir ir2"></div><div class="ir ir3"></div>
-        <div class="ir-core">AWAITING<br>INPUT</div>
+    <div class="idle-state" id="idleState">
+      <div class="idle-eye">
+        <div class="idle-eye-ring r1"></div>
+        <div class="idle-eye-ring r2"></div>
+        <div class="idle-eye-ring r3"></div>
+        <div class="idle-eye-core"><span>AWAITING</span><span>INPUT</span></div>
       </div>
-      <div class="idle-hint">Paste a URL or text to begin<br>real-time fact verification</div>
+      <p class="idle-text">Paste a URL or text to begin<br><strong>real-time fact verification</strong></p>
       <div class="idle-sources">
-        <span>Article Fetch</span><span>·</span><span>Domain Rep.</span><span>·</span>
-        <span>Wikipedia</span><span>·</span><span>GDELT News</span><span>·</span><span>ClaimBuster AI</span>
+        <span>Article Fetch</span><span class="idle-sep">·</span>
+        <span>Domain DB</span><span class="idle-sep">·</span>
+        <span>Wikipedia</span><span class="idle-sep">·</span>
+        <span>GDELT News</span><span class="idle-sep">·</span>
+        <span>ClaimBuster AI</span>
       </div>
     </div>
 
     <!-- SCANNING -->
-    <div id="scanState" class="scanning" style="display:none">
+    <div class="scanning-state" id="scanState" style="display:none">
       <div class="scan-beam"></div>
-      <div class="bars">
-        <div class="bar b1"></div><div class="bar b2"></div><div class="bar b3"></div>
-        <div class="bar b4"></div><div class="bar b5"></div><div class="bar b6"></div>
+      <div class="scan-lines-anim">
+        <div class="sline"></div><div class="sline"></div><div class="sline"></div>
+        <div class="sline"></div><div class="sline"></div><div class="sline"></div>
       </div>
-      <div class="steps" id="stepList">
-        <div class="step" id="s1">◈ Fetching article content...</div>
-        <div class="step" id="s2">◈ Checking domain reputation...</div>
-        <div class="step" id="s3">◈ Running structural analysis...</div>
-        <div class="step" id="s4">◈ Searching Wikipedia...</div>
-        <div class="step" id="s5">◈ Querying GDELT live news index...</div>
-        <div class="step" id="s6">◈ ClaimBuster AI scoring sentences...</div>
-        <div class="step" id="s7">◈ Computing final verdict...</div>
+      <div class="scan-status">
+        <div class="scan-step" id="s1">◈ Fetching article content...</div>
+        <div class="scan-step" id="s2">◈ Checking domain reputation...</div>
+        <div class="scan-step" id="s3">◈ Running structural analysis...</div>
+        <div class="scan-step" id="s4">◈ Querying Wikipedia API...</div>
+        <div class="scan-step" id="s5">◈ Searching GDELT live news...</div>
+        <div class="scan-step" id="s6">◈ ClaimBuster AI scoring...</div>
+        <div class="scan-step" id="s7">◈ Computing final verdict...</div>
       </div>
     </div>
 
     <!-- RESULT -->
-    <div id="resultState" style="display:none">
+    <div class="result-state" id="resultState" style="display:none">
 
-      <!-- VERDICT -->
-      <div class="verdict-wrap" id="verdictWrap">
-        <div class="v-icon-wrap">
-          <div class="v-icon" id="vIcon"></div>
-          <div class="v-pulse" id="vPulse"></div>
+      <!-- VERDICT BANNER -->
+      <div class="verdict-banner" id="verdictBanner">
+        <div class="verdict-icon-wrap">
+          <div class="verdict-icon" id="verdictIcon"></div>
+          <div class="verdict-pulse" id="verdictPulse"></div>
         </div>
-        <div class="v-text">
-          <div class="v-label" id="vLabel"></div>
-          <div class="v-sub" id="vSub"></div>
+        <div class="verdict-text-wrap">
+          <div class="verdict-label" id="verdictLabel"></div>
+          <div class="verdict-sub" id="verdictSub"></div>
         </div>
-        <div class="v-score" id="vScore"></div>
+        <div class="verdict-score" id="verdictScore"></div>
       </div>
 
       <!-- METERS -->
-      <div class="meters">
-        <div class="mrow"><span class="mlbl">FAKE PROB.</span><div class="mtrack"><div class="mbar fake-bar" id="mFake"></div><div class="mshine"></div></div><span class="mval" id="mvFake">0%</span></div>
-        <div class="mrow"><span class="mlbl">CREDIBILITY</span><div class="mtrack"><div class="mbar real-bar" id="mReal"></div><div class="mshine"></div></div><span class="mval" id="mvReal">0%</span></div>
-        <div class="mrow"><span class="mlbl">CONFIDENCE</span><div class="mtrack"><div class="mbar conf-bar" id="mConf"></div><div class="mshine"></div></div><span class="mval" id="mvConf">0%</span></div>
+      <div class="meters-section">
+        <div class="meter-row"><span class="meter-lbl">FAKE PROBABILITY</span><div class="meter-bar-wrap"><div class="meter-bar" id="mFake"></div><div class="meter-shimmer"></div></div><span class="meter-val" id="mvFake">0%</span></div>
+        <div class="meter-row"><span class="meter-lbl">CREDIBILITY</span><div class="meter-bar-wrap"><div class="meter-bar real-bar" id="mReal"></div><div class="meter-shimmer"></div></div><span class="meter-val" id="mvReal">0%</span></div>
+        <div class="meter-row"><span class="meter-lbl">CONFIDENCE</span><div class="meter-bar-wrap"><div class="meter-bar conf-bar" id="mConf"></div><div class="meter-shimmer"></div></div><span class="meter-val" id="mvConf">0%</span></div>
       </div>
 
-      <!-- BREAKDOWN -->
-      <div class="section-block">
-        <div class="sb-title">SCORE BREAKDOWN</div>
+      <!-- SCORE BREAKDOWN -->
+      <div class="breakdown-section">
+        <div class="section-label">SCORE BREAKDOWN — 5 LAYERS</div>
         <div class="breakdown-grid" id="breakdown"></div>
       </div>
 
-      <!-- ARTICLE INFO (shown when URL fetched) -->
+      <!-- ARTICLE DETAILS (URL mode only) -->
       <div class="section-block" id="articleBlock" style="display:none">
-        <div class="sb-title">ARTICLE DETAILS</div>
+        <div class="section-label">ARTICLE DETAILS</div>
         <div class="article-info" id="articleInfo"></div>
       </div>
 
       <!-- DOMAIN REPUTATION -->
       <div class="section-block" id="domainBlock" style="display:none">
-        <div class="sb-title">DOMAIN REPUTATION</div>
+        <div class="section-label">DOMAIN REPUTATION</div>
         <div class="domain-card" id="domainCard"></div>
       </div>
 
-      <!-- WIKIPEDIA CROSS-REFERENCE -->
+      <!-- WIKIPEDIA -->
       <div class="section-block">
-        <div class="sb-title">WIKIPEDIA CROSS-REFERENCE <span class="live-dot">LIVE</span></div>
-        <div class="wiki-results" id="wikiResults"></div>
+        <div class="section-label">WIKIPEDIA CROSS-REFERENCE <span class="live-dot">● LIVE</span></div>
+        <div class="wiki-results" id="wikiResults"><div class="loading-msg">Awaiting scan...</div></div>
       </div>
 
-      <!-- GDELT LIVE NEWS -->
+      <!-- GDELT -->
       <div class="section-block">
-        <div class="sb-title">GDELT LIVE NEWS INDEX <span class="live-dot">LIVE</span></div>
-        <div class="gdelt-results" id="gdeltResults"></div>
+        <div class="section-label">GDELT LIVE NEWS INDEX <span class="live-dot">● LIVE</span></div>
+        <div class="gdelt-results" id="gdeltResults"><div class="loading-msg">Awaiting scan...</div></div>
       </div>
 
       <!-- CLAIMBUSTER -->
       <div class="section-block">
-        <div class="sb-title">CLAIMBUSTER AI — SENTENCE SCORING <span class="live-dot">LIVE</span></div>
-        <div class="claim-results" id="claimResults"></div>
+        <div class="section-label">CLAIMBUSTER AI — SENTENCE SCORING <span class="live-dot">● LIVE</span></div>
+        <div class="claim-results" id="claimResults"><div class="loading-msg">Awaiting scan...</div></div>
       </div>
 
-      <!-- SIGNALS -->
-      <div class="section-block">
-        <div class="sb-title">ALL SIGNALS <span class="sig-count" id="sigCount">0</span></div>
-        <div class="signals" id="signals"></div>
+      <!-- ALL SIGNALS -->
+      <div class="signals-section">
+        <div class="section-label">ALL DETECTED SIGNALS <span class="signal-badge" id="sigCount">0</span></div>
+        <div class="signals-list" id="signalsList"></div>
       </div>
 
       <!-- ACTIONS -->
-      <div class="act-row">
-        <button class="act-btn" onclick="copyReport()">⧉ COPY REPORT</button>
-        <button class="act-btn" onclick="shareResult()">↗ SHARE</button>
-        <button class="act-btn" onclick="resetAll()">↺ NEW SCAN</button>
+      <div class="action-row">
+        <button class="btn-action" onclick="copyReport()">⧉ COPY REPORT</button>
+        <button class="btn-action" onclick="shareResult()">↗ SHARE</button>
+        <button class="btn-action" onclick="resetAll()">↺ NEW SCAN</button>
       </div>
 
     </div>
@@ -230,41 +244,21 @@
 </main>
 
 <!-- HOW IT WORKS -->
-<section class="how-wrap">
-  <div class="how-title">HOW IT WORKS — 5 REAL VERIFICATION SOURCES</div>
+<section class="how-section">
+  <div class="how-header">HOW TRUTHSCAN v3.1 WORKS — 5 REAL VERIFICATION SOURCES</div>
   <div class="how-grid">
-    <div class="how-card">
-      <div class="hw-n">01</div><div class="hw-ico">🔗</div>
-      <div class="hw-t">REAL ARTICLE FETCHING</div>
-      <div class="hw-d">Paste any news URL — TruthScan fetches the full article via <code>allorigins.win</code> CORS proxy, extracts the headline, body text, author, and publish date. Works on any public URL.</div>
-    </div>
-    <div class="how-card">
-      <div class="hw-n">02</div><div class="hw-ico">🏷</div>
-      <div class="hw-t">DOMAIN REPUTATION</div>
-      <div class="hw-d">Checks the article's domain against a database of <strong>500+ known fake news, satire, and trusted sources</strong> compiled from media bias research (MBFC, NewsGuard categories).</div>
-    </div>
-    <div class="how-card">
-      <div class="hw-n">03</div><div class="hw-ico">📖</div>
-      <div class="hw-t">WIKIPEDIA CROSS-REFERENCE</div>
-      <div class="hw-d">Extracts key claims and entities, then queries <strong>Wikipedia's live API</strong> (<code>prop=extracts</code>) to retrieve actual article content and compare facts in real time.</div>
-    </div>
-    <div class="how-card">
-      <div class="hw-n">04</div><div class="hw-ico">📡</div>
-      <div class="hw-t">GDELT LIVE NEWS</div>
-      <div class="hw-d">Searches the <strong>GDELT Project</strong> — a live index of 10,000+ global news outlets. Finds real articles about the same topic to confirm or deny the story's existence in credible media.</div>
-    </div>
-    <div class="how-card">
-      <div class="hw-n">05</div><div class="hw-ico">🤖</div>
-      <div class="hw-t">CLAIMBUSTER AI</div>
-      <div class="hw-d">Sends each sentence to the <strong>ClaimBuster API</strong> — a real AI trained to score how "check-worthy" a claim is. High scores on multiple sentences indicate verifiable (or false) factual claims.</div>
-    </div>
+    <div class="how-card"><div class="how-num">01</div><div class="how-icon">🔗</div><div class="how-title">REAL ARTICLE FETCHING</div><div class="how-desc">Paste any news URL — fetches the full article via <code>allorigins.win</code> CORS proxy, extracts headline, body text, author, and publish date. Works on any public URL.</div></div>
+    <div class="how-card"><div class="how-num">02</div><div class="how-icon">🏷</div><div class="how-title">DOMAIN REPUTATION</div><div class="how-desc">Checks the domain against <strong>500+ known fake, satire, and trusted sources</strong> compiled from MBFC and NewsGuard research. Strongest single credibility signal.</div></div>
+    <div class="how-card"><div class="how-num">03</div><div class="how-icon">📖</div><div class="how-title">WIKIPEDIA API (LIVE)</div><div class="how-desc">Extracts named entities and queries Wikipedia's <code>prop=extracts</code> API live, retrieving real article paragraphs to cross-reference claims and verify topics.</div></div>
+    <div class="how-card"><div class="how-num">04</div><div class="how-icon">📡</div><div class="how-title">GDELT LIVE NEWS</div><div class="how-desc">Searches the <strong>GDELT Project</strong> — live index of 10,000+ global outlets. Story covered by real news = credible. Zero results = suspicious. Shows clickable real articles.</div></div>
+    <div class="how-card"><div class="how-num">05</div><div class="how-icon">🤖</div><div class="how-title">CLAIMBUSTER AI</div><div class="how-desc">Sends sentences to <strong>ClaimBuster</strong> by UT Arlington — a real AI that scores each sentence 0–100% for check-worthiness. High scores = strong factual claims needing verification.</div></div>
   </div>
 </section>
 
-<footer class="footer">
-  <span>TRUTHSCAN v3.1</span><span class="fs">·</span>
-  <span>allorigins CORS · Wikipedia API · GDELT Project · ClaimBuster AI · Domain DB</span>
-  <span class="fs">·</span><span id="clock"></span>
+<footer class="site-footer">
+  <span>TRUTHSCAN v3.1</span><span class="footer-sep">//</span>
+  <span>allorigins · Wikipedia API · GDELT Project · ClaimBuster AI · Domain DB 500+</span>
+  <span class="footer-sep">//</span><span id="clock"></span>
 </footer>
 
 <script src="script.js"></script>
