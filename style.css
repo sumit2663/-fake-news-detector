@@ -50,6 +50,51 @@ body { font-family:var(--fb); background:var(--bg); color:var(--txt); min-height
   );
 }
 
+/* ── FLOATING PANELS / OVERLAY ── */
+.api-config-panel {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  background: rgba(13,13,13,.85);
+  padding: 15px;
+  border: 1px solid #00f0ff;
+  border-radius: 10px;
+  z-index: 2000;
+  width: 250px;
+
+  box-shadow: 0 0 20px rgba(0,200,255,.3);
+  backdrop-filter: blur(6px);
+
+  animation: panelIn .3s ease; /* ✅ ADD HERE */
+}
+
+/* ✅ ADD RIGHT BELOW */
+.api-config-panel input {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 6px;
+  background: #111;
+  border: 1px solid #333;
+  color: #fff;
+}
+.api-config-panel input:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 10px rgba(0,200,255,.4);
+  outline: none;
+}
+.api-config-panel button {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 6px;
+  background: #00f0ff;
+  border: none;
+  cursor: pointer;
+}
+.api-config-panel button:hover {
+  background: #00c8ff;
+  box-shadow: 0 0 10px rgba(0,200,255,.5);
+}
+
 /* REDUCED: corners smaller (24px), thinner (1px), more transparent */
 .corner {
   position:fixed; width:24px; height:24px; z-index:999; pointer-events:none;
@@ -68,6 +113,31 @@ body { font-family:var(--fb); background:var(--bg); color:var(--txt); min-height
 }
 .header-inner { display:flex; align-items:center; justify-content:space-between; padding:14px 24px; flex-wrap:wrap; gap:12px; }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.api-config-btn {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: rgba(0,200,255,.12);
+  border: 1px solid var(--b2);
+  border-radius: 5px;
+  color: var(--cyan);
+  font-family: var(--fd);
+  font-size: .7rem;
+  cursor: pointer;
+  transition: all .2s;
+}
+
+.api-config-btn:hover {
+  background: rgba(0,200,255,.25);
+  box-shadow: 0 0 12px rgba(0,200,255,.4);
+}
 /* RESTORED: exact original eye logo structure */
 .logo-block { display:flex; align-items:center; gap:14px; }
 .logo-icon { width:44px; height:44px; display:flex; align-items:center; justify-content:center; }
