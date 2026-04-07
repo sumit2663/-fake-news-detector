@@ -537,14 +537,14 @@ const page = Object.values(pages)[0];
 if (!page || page.missing !== undefined) return;
 
 const extract = (page.extract || '').replace(/\n+/g, ' ').trim();
+const extract = (page.extract || '').replace(/\n+/g, ' ').trim();
 if (!extract) return;
 
+// 🔍 Extract words
 const extractWords = extract.toLowerCase().split(/\s+/).filter(w => w.length > 2);
-if (!extractWords.length) return;
 
-// 🔍 Normalize input
-const inputWords = text.toLowerCase().split(/\s+/)
-  .filter(w => w.length > 3);
+// 🔍 Input words
+const inputWords = text.toLowerCase().split(/\s+/).filter(w => w.length > 3);
 
 // ⚡ Fast lookup
 const extractSet = new Set(extractWords);
@@ -552,13 +552,13 @@ const extractSet = new Set(extractWords);
 // 🔍 Overlap
 const overlap = inputWords.filter(w => extractSet.has(w)).length;
 
-// 🧠 Ratio (FIXED)
+// 🧠 Ratio
 const overlapRatio = overlap / extractWords.length;
 
 // 🎯 Dynamic threshold
 const threshold = extractWords.length < 80 ? 0.03 : 0.05;
 
-// ✅ FINAL decision (single clean condition)
+// ✅ FINAL decision
 if (overlap >= 3 && overlapRatio > threshold) {
   results.push({
     query,
