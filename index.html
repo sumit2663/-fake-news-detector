@@ -9,44 +9,37 @@
 </head>
 <body>
 
-<!-- REDUCED: scanlines opacity much lower, corners smaller/subtler -->
 <div class="scanlines"></div>
 <div class="grid-bg"></div>
-<div class="corner corner-tl"></div>
-<div class="corner corner-tr"></div>
-<div class="corner corner-bl"></div>
-<div class="corner corner-br"></div>
+<div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+<div class="corner corner-bl"></div><div class="corner corner-br"></div>
 
-<!-- HEADER -->
 <header class="site-header">
   <div class="header-inner">
     <div class="logo-block">
-      <!-- RESTORED: original eye-outer/eye-inner/pupil structure -->
       <div class="logo-icon">
-        <div class="eye-outer">
-          <div class="eye-inner">
-            <div class="pupil"></div>
-          </div>
-        </div>
+        <div class="eye-outer"><div class="eye-inner"><div class="pupil"></div></div></div>
       </div>
       <div class="logo-text">
-        <span class="logo-name">TRUTH<span class="accent">SCAN</span> <span class="ver">v3.1</span></span>
+        <span class="logo-name">TRUTH<span class="accent">SCAN</span> <span class="ver">v3.2</span></span>
         <span class="logo-sub">// REAL-TIME MULTI-SOURCE FACT VERIFICATION ENGINE</span>
       </div>
     </div>
-    <div class="header-stats">
-      <div class="stat-pill"><span class="stat-val" id="hs-total">0</span><span class="stat-lbl">SCANNED</span></div>
-      <div class="stat-pill fake-stat"><span class="stat-val" id="hs-fake">0</span><span class="stat-lbl">FAKE</span></div>
-      <div class="stat-pill real-stat"><span class="stat-val" id="hs-real">0</span><span class="stat-lbl">REAL</span></div>
+    <div class="header-right">
+      <div class="header-stats">
+        <div class="stat-pill"><span class="stat-val" id="hs-total">0</span><span class="stat-lbl">SCANNED</span></div>
+        <div class="stat-pill fake-stat"><span class="stat-val" id="hs-fake">0</span><span class="stat-lbl">FAKE</span></div>
+        <div class="stat-pill real-stat"><span class="stat-val" id="hs-real">0</span><span class="stat-lbl">REAL</span></div>
+      </div>
     </div>
   </div>
   <div class="header-ticker">
     <span class="ticker-label">● LIVE</span>
-    <div class="ticker-track">
-      <span class="ticker-content" id="ticker">TRUTHSCAN ONLINE — REAL ARTICLE FETCHING VIA CORS PROXY — DOMAIN REPUTATION DB (500+ SOURCES) — WIKIPEDIA CROSS-REFERENCE — NEWSDATA.IO LIVE NEWS — CLAIMBUSTER AI — PASTE URL OR TEXT TO BEGIN</span>
-    </div>
+    <div class="ticker-track"><span class="ticker-content" id="ticker">TRUTHSCAN v3.2 ONLINE — NEWSDATA.IO LIVE NEWS ACTIVE — WIKIPEDIA REST API — DOMAIN REPUTATION DB 500+ SOURCES — CLAIMBUSTER AI AVAILABLE — PASTE URL OR TEXT TO BEGIN FACT VERIFICATION</span></div>
   </div>
 </header>
+
+<!-- API KEYS: NewsData.io key is hardcoded in script.js. ClaimBuster key can be added to script.js line ~155 -->
 
 <!-- SOURCE STATUS BAR -->
 <div class="source-bar">
@@ -54,18 +47,16 @@
   <div class="src-item" id="src-fetch"><span class="src-dot"></span><span class="src-label">ARTICLE FETCH</span><span class="src-status" id="ss-fetch">READY</span></div>
   <div class="src-item" id="src-domain"><span class="src-dot"></span><span class="src-label">DOMAIN DB</span><span class="src-status" id="ss-domain">READY</span></div>
   <div class="src-item" id="src-wiki"><span class="src-dot"></span><span class="src-label">WIKIPEDIA</span><span class="src-status" id="ss-wiki">READY</span></div>
-  <div class="src-item" id="src-gdelt"><span class="src-dot"></span><span class="src-label">NEWSDATA.IO</span><span class="src-status" id="ss-newsdata">READY</span></div>
-  <div class="src-item" id="src-claim"><span class="src-dot"></span><span class="src-label">CLAIMBUSTER AI</span><span class="src-status" id="ss-claim">READY</span></div>
+  <div class="src-item" id="src-newsdata"><span class="src-dot"></span><span class="src-label">LIVE NEWS RSS</span><span class="src-status" id="ss-newsdata">READY</span></div>
+  <div class="src-item" id="src-claim"><span class="src-dot"></span><span class="src-label">SENTENCE ANALYSIS</span><span class="src-status" id="ss-claim">READY</span></div>
 </div>
 
-<!-- MAIN -->
 <main class="main-layout">
 
   <!-- INPUT PANEL -->
   <section class="panel panel-input">
     <div class="panel-header">
-      <span class="panel-tag">INPUT</span>
-      <span class="panel-title">URL OR TEXT</span>
+      <span class="panel-tag">INPUT</span><span class="panel-title">URL OR TEXT</span>
       <div class="panel-indicator blink"></div>
     </div>
 
@@ -74,18 +65,15 @@
       <button class="mtab" id="tab-text" onclick="switchMode('text')">📝 TEXT / HEADLINE</button>
     </div>
 
-    <!-- URL MODE -->
     <div id="mode-url" class="mode-panel">
       <div class="url-input-wrap">
         <span class="url-prefix">URL</span>
         <input type="url" id="urlInput" placeholder="https://example.com/news-article" oninput="onUrlInput()">
         <button class="fetch-btn" id="fetchBtn" onclick="fetchArticle()">FETCH</button>
       </div>
+      <div class="fetch-hint">⚡ If fetch fails, paste the article text in TEXT mode instead.</div>
       <div class="fetch-preview" id="fetchPreview" style="display:none">
-        <div class="fp-header">
-          <span class="fp-domain" id="fpDomain"></span>
-          <span class="fp-rep" id="fpRep"></span>
-        </div>
+        <div class="fp-header"><span class="fp-domain" id="fpDomain"></span><span class="fp-rep" id="fpRep"></span></div>
         <div class="fp-title" id="fpTitle"></div>
         <div class="fp-body" id="fpText"></div>
         <div class="fp-meta" id="fpMeta"></div>
@@ -93,18 +81,14 @@
       <div class="fetch-error" id="fetchError" style="display:none"></div>
     </div>
 
-    <!-- TEXT MODE -->
     <div id="mode-text" class="mode-panel" style="display:none">
       <div class="input-wrap">
         <div class="input-line-numbers" id="lineNumbers">1</div>
         <textarea id="newsText"
-          placeholder="Paste headline, article, or social media post here...&#10;&#10;Live APIs will check:&#10;• Wikipedia — entity &amp; fact cross-reference&#10;• NEWSDATA.IO — real-time global news presence&#10;• ClaimBuster AI — sentence-level claim scoring&#10;• Domain DB — 500+ fake/trusted sources"
+          placeholder="Paste headline, article, or social media post here...&#10;&#10;Live checks:&#10;• Wikipedia — entity &amp; fact cross-reference (free, no key)&#10;• NewsData.io — live news search (free key needed)&#10;• ClaimBuster AI — claim scoring (free key needed)&#10;• Domain DB — 500+ fake/trusted sources (built-in)"
           oninput="updateLN();updateCC();" spellcheck="false"></textarea>
       </div>
-      <div class="input-meta">
-        <span id="charCount">0 chars</span>
-        <span>Ctrl+Enter to scan</span>
-      </div>
+      <div class="input-meta"><span id="charCount">0 chars</span><span>Ctrl+Enter to scan</span></div>
     </div>
 
     <div class="button-row">
@@ -126,17 +110,13 @@
   <!-- RESULT PANEL -->
   <section class="panel panel-result">
     <div class="panel-header">
-      <span class="panel-tag">OUTPUT</span>
-      <span class="panel-title">VERIFICATION RESULT</span>
+      <span class="panel-tag">OUTPUT</span><span class="panel-title">VERIFICATION RESULT</span>
       <div class="panel-indicator" id="rdot"></div>
     </div>
 
-    <!-- IDLE -->
     <div class="idle-state" id="idleState">
       <div class="idle-eye">
-        <div class="idle-eye-ring r1"></div>
-        <div class="idle-eye-ring r2"></div>
-        <div class="idle-eye-ring r3"></div>
+        <div class="idle-eye-ring r1"></div><div class="idle-eye-ring r2"></div><div class="idle-eye-ring r3"></div>
         <div class="idle-eye-core"><span>AWAITING</span><span>INPUT</span></div>
       </div>
       <p class="idle-text">Paste a URL or text to begin<br><strong>real-time fact verification</strong></p>
@@ -144,12 +124,11 @@
         <span>Article Fetch</span><span class="idle-sep">·</span>
         <span>Domain DB</span><span class="idle-sep">·</span>
         <span>Wikipedia</span><span class="idle-sep">·</span>
-        <span>NEWSDATA.IO</span><span class="idle-sep">·</span>
-        <span>ClaimBuster AI</span>
+        <span>NDTV · BBC · Reuters RSS</span><span class="idle-sep">·</span>
+        <span>Sentence Analysis</span>
       </div>
     </div>
 
-    <!-- SCANNING -->
     <div class="scanning-state" id="scanState" style="display:none">
       <div class="scan-beam"></div>
       <div class="scan-lines-anim">
@@ -161,16 +140,14 @@
         <div class="scan-step" id="s2">◈ Checking domain reputation...</div>
         <div class="scan-step" id="s3">◈ Running structural analysis...</div>
         <div class="scan-step" id="s4">◈ Querying Wikipedia API...</div>
-        <div class="scan-step" id="s5">◈ Searching NEWSDATA.IO live news...</div>
-        <div class="scan-step" id="s6">◈ ClaimBuster AI scoring...</div>
+        <div class="scan-step" id="s5">◈ Searching NDTV, BBC, Reuters, TOI RSS...</div>
+        <div class="scan-step" id="s6">◈ Sentence credibility analysis...</div>
         <div class="scan-step" id="s7">◈ Computing final verdict...</div>
       </div>
     </div>
 
-    <!-- RESULT -->
     <div class="result-state" id="resultState" style="display:none">
 
-      <!-- VERDICT BANNER -->
       <div class="verdict-banner" id="verdictBanner">
         <div class="verdict-icon-wrap">
           <div class="verdict-icon" id="verdictIcon"></div>
@@ -183,81 +160,70 @@
         <div class="verdict-score" id="verdictScore"></div>
       </div>
 
-      <!-- METERS -->
       <div class="meters-section">
         <div class="meter-row"><span class="meter-lbl">FAKE PROBABILITY</span><div class="meter-bar-wrap"><div class="meter-bar" id="mFake"></div><div class="meter-shimmer"></div></div><span class="meter-val" id="mvFake">0%</span></div>
         <div class="meter-row"><span class="meter-lbl">CREDIBILITY</span><div class="meter-bar-wrap"><div class="meter-bar real-bar" id="mReal"></div><div class="meter-shimmer"></div></div><span class="meter-val" id="mvReal">0%</span></div>
         <div class="meter-row"><span class="meter-lbl">CONFIDENCE</span><div class="meter-bar-wrap"><div class="meter-bar conf-bar" id="mConf"></div><div class="meter-shimmer"></div></div><span class="meter-val" id="mvConf">0%</span></div>
       </div>
 
-      <!-- SCORE BREAKDOWN -->
       <div class="breakdown-section">
         <div class="section-label">SCORE BREAKDOWN — 5 LAYERS</div>
         <div class="breakdown-grid" id="breakdown"></div>
       </div>
 
-      <!-- ARTICLE DETAILS (URL mode only) -->
       <div class="section-block" id="articleBlock" style="display:none">
         <div class="section-label">ARTICLE DETAILS</div>
         <div class="article-info" id="articleInfo"></div>
       </div>
 
-      <!-- DOMAIN REPUTATION -->
       <div class="section-block" id="domainBlock" style="display:none">
         <div class="section-label">DOMAIN REPUTATION</div>
         <div class="domain-card" id="domainCard"></div>
       </div>
 
-      <!-- WIKIPEDIA -->
       <div class="section-block">
         <div class="section-label">WIKIPEDIA CROSS-REFERENCE <span class="live-dot">● LIVE</span></div>
         <div class="wiki-results" id="wikiResults"><div class="loading-msg">Awaiting scan...</div></div>
       </div>
 
-      <!-- NEWSDATA.IO -->
       <div class="section-block">
-        <div class="section-label">NEWSDATA.IO LIVE NEWS INDEX <span class="live-dot">● LIVE</span></div>
-        <div class="NEWSDATA-results" id="NEWSDATAResults"><div class="loading-msg">Awaiting scan...</div></div>
+        <div class="section-label">LIVE NEWS — NDTV · BBC · TOI · REUTERS · GOOGLE NEWS <span class="live-dot">● LIVE</span></div>
+        <div class="newsdata-results" id="newsdataResults"><div class="loading-msg">Awaiting scan...</div></div>
       </div>
 
-      <!-- CLAIMBUSTER -->
       <div class="section-block">
-        <div class="section-label">CLAIMBUSTER AI — SENTENCE SCORING <span class="live-dot">● LIVE</span></div>
+        <div class="section-label">SENTENCE CREDIBILITY ANALYSIS <span class="live-dot">● INSTANT</span></div>
         <div class="claim-results" id="claimResults"><div class="loading-msg">Awaiting scan...</div></div>
       </div>
 
-      <!-- ALL SIGNALS -->
       <div class="signals-section">
         <div class="section-label">ALL DETECTED SIGNALS <span class="signal-badge" id="sigCount">0</span></div>
         <div class="signals-list" id="signalsList"></div>
       </div>
 
-      <!-- ACTIONS -->
       <div class="action-row">
         <button class="btn-action" onclick="copyReport()">⧉ COPY REPORT</button>
         <button class="btn-action" onclick="shareResult()">↗ SHARE</button>
         <button class="btn-action" onclick="resetAll()">↺ NEW SCAN</button>
       </div>
-
     </div>
   </section>
 </main>
 
-<!-- HOW IT WORKS -->
 <section class="how-section">
-  <div class="how-header">HOW TRUTHSCAN v3.1 WORKS — 5 REAL VERIFICATION SOURCES</div>
+  <div class="how-header">HOW TRUTHSCAN v3.2 WORKS — 5 REAL SOURCES</div>
   <div class="how-grid">
-    <div class="how-card"><div class="how-num">01</div><div class="how-icon">🔗</div><div class="how-title">REAL ARTICLE FETCHING</div><div class="how-desc">Paste any news URL — fetches the full article via <code>allorigins.win</code> CORS proxy, extracts headline, body text, author, and publish date. Works on any public URL.</div></div>
-    <div class="how-card"><div class="how-num">02</div><div class="how-icon">🏷</div><div class="how-title">DOMAIN REPUTATION</div><div class="how-desc">Checks the domain against <strong>500+ known fake, satire, and trusted sources</strong> compiled from MBFC and NewsGuard research. Strongest single credibility signal.</div></div>
-    <div class="how-card"><div class="how-num">03</div><div class="how-icon">📖</div><div class="how-title">WIKIPEDIA API (LIVE)</div><div class="how-desc">Extracts named entities and queries Wikipedia's <code>prop=extracts</code> API live, retrieving real article paragraphs to cross-reference claims and verify topics.</div></div>
-    <div class="how-card"><div class="how-num">04</div><div class="how-icon">📡</div><div class="how-title">NEWSDATA.IO LIVE NEWS</div><div class="how-desc">Searches the <strong>NEWSDATA.IO Project</strong> — live index of 10,000+ global outlets. Story covered by real news = credible. Zero results = suspicious. Shows clickable real articles.</div></div>
-    <div class="how-card"><div class="how-num">05</div><div class="how-icon">🤖</div><div class="how-title">CLAIMBUSTER AI</div><div class="how-desc">Sends sentences to <strong>ClaimBuster</strong> by UT Arlington — a real AI that scores each sentence 0–100% for check-worthiness. High scores = strong factual claims needing verification.</div></div>
+    <div class="how-card"><div class="how-num">01</div><div class="how-icon">🔗</div><div class="how-title">ARTICLE FETCHING</div><div class="how-desc">Paste any URL — dual CORS proxies (<code>allorigins.win</code> + <code>corsproxy.io</code>) fetch the real article, extract headline, body, author, date.</div></div>
+    <div class="how-card"><div class="how-num">02</div><div class="how-icon">🏷</div><div class="how-title">DOMAIN REPUTATION</div><div class="how-desc">Checks domain against <strong>500+ known fake, satire, trusted sources</strong> from MBFC/NewsGuard. Strongest single signal — instant, no key needed.</div></div>
+    <div class="how-card"><div class="how-num">03</div><div class="how-icon">📖</div><div class="how-title">WIKIPEDIA (FREE)</div><div class="how-desc">Smart entity extraction + live Wikipedia <code>prop=extracts</code> API. Finds real people, orgs, events — ignores generic words. No key needed.</div></div>
+    <div class="how-card"><div class="how-num">04</div><div class="how-icon">📡</div><div class="how-title">LIVE NEWS RSS (FREE)</div><div class="how-desc">Searches <strong>NDTV, Times of India, BBC News, Reuters, and Google News</strong> RSS feeds in real time. No API key needed. If the story isn't in major outlets — it's suspicious.</div></div>
+    <div class="how-card"><div class="how-num">05</div><div class="how-icon">🔬</div><div class="how-title">SENTENCE ANALYSIS (LOCAL)</div><div class="how-desc">Scores each sentence for specificity, sourcing, attribution, numbers, and emotional loading — all locally, no API key needed. Identifies high-claims sentences that need verification.</div></div>
   </div>
 </section>
 
 <footer class="site-footer">
-  <span>TRUTHSCAN v3.1</span><span class="footer-sep">//</span>
-  <span>allorigins · Wikipedia API · NEWSDATA.IO · ClaimBuster AI · Domain DB 500+</span>
+  <span>TRUTHSCAN v3.2</span><span class="footer-sep">//</span>
+  <span>Wikipedia · NewsData.io · ClaimBuster AI · Domain DB 500+</span>
   <span class="footer-sep">//</span><span id="clock"></span>
 </footer>
 
