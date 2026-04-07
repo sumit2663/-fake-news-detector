@@ -531,23 +531,24 @@ if (!extract) return;
 const extractWords = extract.toLowerCase().split(/\s+/).filter(w => w.length > 2);
 if (!extractWords.length) return;
 
-// 🔍 Normalize input words
+// 🔍 Normalize input
 const inputWords = text.toLowerCase().split(/\s+/)
   .filter(w => w.length > 3);
 
-// 🔍 Overlap check (faster + cleaner)
+// ⚡ Fast lookup
 const extractSet = new Set(extractWords);
 
+// 🔍 Overlap
 const overlap = inputWords.filter(w => extractSet.has(w)).length;
 
-// 🧠 Safe ratio
+// 🧠 Ratio (FIXED)
 const overlapRatio = overlap / extractWords.length;
 
-// 🎯 Dynamic threshold (smart)
+// 🎯 Dynamic threshold
 const threshold = extractWords.length < 80 ? 0.03 : 0.05;
 
-// ✅ Decision
-if (overlapRatio > threshold && overlap >= 3) {
+// ✅ FINAL decision (single clean condition)
+if (overlap >= 3 && overlapRatio > threshold) {
   results.push({
     query,
     title: pageTitle,
