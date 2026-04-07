@@ -529,9 +529,22 @@ async function queryWikipedia(text) {
       const extract=(page.extract||'').replace(/\n+/g,' ').trim();
       if (!extract) return;
 
-      results.push({ query, title:pageTitle, extract, url:`https://en.wikipedia.org/wiki/${encodeURIComponent(pageTitle)}`, hitCount:sData.query?.searchinfo?.totalhits||0 });
-      score-=1.2;
-    } catch {}
+      r// ✅ ADD THIS BLOCK HERE
+        const overlap = text.toLowerCase().split(/\s+/)
+          .filter(w => w.length > 3 && extract.toLowerCase().includes(w)).length;
+      
+      // ✅ ONLY PUSH IF RELEVANT
+      if (overlap > 5) {
+        results.push({
+          query,
+          title: pageTitle,
+          extract,
+          url: `https://en.wikipedia.org/wiki/${encodeURIComponent(pageTitle)}`,
+          hitCount: sData.query?.searchinfo?.totalhits || 0
+        });
+        
+        score -= 1.2;
+      } catch {}
   }));
 
   if (!results.length) {
@@ -613,55 +626,103 @@ function buildNewsQuery(text) {
 // Without key: skipped with helpful message
 // ══════════════════════════════════════════
 async function queryClaimBuster(text) {
-  setSrc('claim','active','SCORING');
-  const signals=[]; let score=0; let claims=[];
 
-  if (!API_KEYS.claimbuster) {
-    const msg='ClaimBuster: No key set. To enable, paste your free key from idir.uta.edu/claimbuster into the API_KEYS.claimbuster variable in script.js';
-    safeHTML('claimResults',`<div class="nokey-msg">🔑 ClaimBuster not configured. Get a free key at <a href="https://idir.uta.edu/claimbuster/" target="_blank" style="color:var(--cyan)">idir.uta.edu/claimbuster</a> and add it to script.js line 155.</div>`);
-    setSrc('claim','fail','NO KEY');
+  // ✅ CLEAR OLD RESULTS FIRST
+  safeHTML('claimResults', '');
+
+  const signals=[]; 
+  let score=0; 
+  let claims=[];
+
+  const key = (API_KEYS.claimbuster || '').trim();
+
+  // 🔑 CHECK FIRST (before UI state)
+  if (!key || key === 'YOUR_REAL_API_KEY') {
+    const msg='ClaimBuster: No key set. Add your API key.';
+    
+    setSrc('claim','','SKIPPED');   // cleaner than "fail"
+
+    safeHTML('claimResults',
+      `<div class="nokey-msg">🔑 ClaimBuster not configured</div>`
+    );
+
     signals.push({ type:'neutral', msg });
     return { score:0, signals, claims:[] };
   }
 
-  const sentences=text.replace(/([.!?])\s+(?=[A-Z])/g,'$1\n').split('\n')
-    .map(s=>s.trim()).filter(s=>s.length>25&&s.length<400).slice(0,5);
+  // ✅ ONLY NOW show active
+  setSrc('claim','active','SCORING');
+
+  const sentences = text
+    .replace(/([.!?])\s+(?=[A-Z])/g,'$1\n')
+    .split('\n')
+    .map(s=>s.trim())
+    .filter(s=>s.length>25 && s.length<400)
+    .slice(0,5);
 
   if (!sentences.length) {
     setSrc('claim','','SKIPPED');
     return { score:0, signals:[], claims:[] };
   }
 
-  const settled=await Promise.allSettled(sentences.map(async sentence => {
-    const res=await fetch(
-      `https://idir.uta.edu/claimbuster/api/v2/score/text/${encodeURIComponent(sentence)}`,
-      {
-        method:'GET',
-        headers:{ 'Accept':'application/json', 'x-api-key': API_KEYS.claimbuster },
-        signal:AbortSignal.timeout(8000),
-      }
-    );
-    if (!res.ok) throw new Error('HTTP '+res.status);
-    const data=await res.json();
-    return { sentence, claimScore:data?.results?.[0]?.score??0 };
-  }));
+  const settled = await Promise.allSettled(
+    sentences.map(async sentence => {
+      const res = await fetch(
+        `https://idir.uta.edu/claimbuster/api/v2/score/text/${encodeURIComponent(sentence)}`,
+        {
+          method:'GET',
+          headers:{ 
+            'Accept':'application/json', 
+            'x-api-key': key 
+          },
+          signal:AbortSignal.timeout(8000),
+        }
+      );
 
-  const fulfilled=settled.filter(r=>r.status==='fulfilled');
-  if (fulfilled.length>0) {
-    claims=fulfilled.map(r=>r.value).sort((a,b)=>b.claimScore-a.claimScore);
-    const high=claims.filter(c=>c.claimScore>0.7).length;
-    const avg=claims.reduce((s,c)=>s+c.claimScore,0)/claims.length;
-    if (high>=3) { score+=1.5; signals.push({type:'fake',msg:`ClaimBuster: ${high} sentences scored >70% check-worthy (avg ${(avg*100).toFixed(0)}%)`}); }
-    else if (claims.length>0) signals.push({type:'neutral',msg:`ClaimBuster: ${claims.length} sentences scored — avg check-worthiness: ${(avg*100).toFixed(0)}%`});
+      if (!res.ok) throw new Error('HTTP '+res.status);
+
+      const data = await res.json();
+      return { sentence, claimScore:data?.results?.[0]?.score ?? 0 };
+    })
+  );
+
+  const fulfilled = settled.filter(r => r.status === 'fulfilled');
+
+  if (fulfilled.length > 0) {
+    claims = fulfilled.map(r => r.value).sort((a,b)=>b.claimScore-a.claimScore);
+
+    const high = claims.filter(c=>c.claimScore>0.7).length;
+    const avg = claims.reduce((s,c)=>s+c.claimScore,0)/claims.length;
+
+    if (high >= 3) {
+      score += 1.5;
+      signals.push({
+        type:'fake',
+        msg:`ClaimBuster: ${high} high-risk claims`
+      });
+    } else {
+      signals.push({
+        type:'neutral',
+        msg:`ClaimBuster avg score ${(avg*100).toFixed(0)}%`
+      });
+    }
+
     setSrc('claim','ok',`${claims.length} SCORED`);
+
   } else {
-    const failReason=settled[0]?.reason?.message||'Unknown error';
-    const msg=failReason.includes('401')||failReason.includes('403')
-      ? 'ClaimBuster: Invalid API key — check your key in ⚙ settings'
-      : `ClaimBuster: API error — ${failReason}`;
-    signals.push({type:'neutral',msg});
-    setSrc('claim','fail','ERROR');
-    safeHTML('claimResults',`<div class="error-msg">⚠ ${msg}</div>`);
+    const failReason = settled[0]?.reason?.message || 'Unknown error';
+
+    let label = failReason.includes('401') || failReason.includes('403')
+      ? 'INVALID KEY'
+      : 'API ERROR';
+
+    setSrc('claim','fail', label);
+
+    safeHTML('claimResults',
+      `<div class="error-msg">⚠ ${failReason}</div>`
+    );
+
+    signals.push({ type:'neutral', msg: failReason });
   }
 
   return { score, signals, claims };
@@ -835,7 +896,7 @@ async function checkNews() {
   await dl(150);
 
   const total=
-    domainScore         *1.5+
+    domainScore         *1.0+
     structural.score    *1.0+
     vocabulary.score    *0.8+
     newsdataResult.score*1.0+
@@ -937,19 +998,17 @@ function displayResult(d) {
       : '<div class="newsdata-none">⚠ Zero articles found for this topic — story not in verified global news index.</div>');
   }
 
-  // ClaimBuster (only set if not already set by error/nokey handler)
-  if (!document.getElementById('claimResults').querySelector('.nokey-msg,.error-msg')) {
-    safeHTML('claimResults', claimResult.claims.length
-      ? claimResult.claims.slice(0,5).map((c,i)=>{
-          const pct=Math.round(c.claimScore*100);
-          const cls=pct>70?'hi':pct>40?'mid':'lo';
-          return `<div class="claim-item" style="animation-delay:${i*.06}s">
-            <div class="claim-pct-wrap"><div class="claim-pct-num ${cls}">${pct}%</div><div class="claim-pct-lbl">CHECK-W.</div></div>
-            <div class="claim-text">${c.sentence}</div>
-          </div>`;
-        }).join('')
-      : '');
-  }
+  safeHTML('claimResults', claimResult.claims.length
+  ? claimResult.claims.slice(0,5).map((c,i)=>{
+      const pct=Math.round(c.claimScore*100);
+      const cls=pct>70?'hi':pct>40?'mid':'lo';
+      return `<div class="claim-item">
+        <div class="claim-pct-num ${cls}">${pct}%</div>
+        <div class="claim-text">${c.sentence}</div>
+      </div>`;
+    }).join('')
+  : '<div class="claim-none">No claims detected</div>'
+);
 
   const allSigs=[
     ...domainSignals,
