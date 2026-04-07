@@ -512,45 +512,53 @@ async function queryWikipedia(text) {
     return { score:0, signals:[], results:[] };
   }
 
- await Promise.allSettled(queries.map(async query => {
-  try {
-    const sRes = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*&srlimit=2&srinfo=totalhits`, { signal: AbortSignal.timeout(7000) });
-    const sData = await sRes.json();
-    const hits = sData?.query?.search || [];
-    if (!hits.length) return;
+ await Promise.allSettled(
+  queries.map(async (query) => {
+    try {
+      const sRes = await fetch(
+        `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*&srlimit=2&srinfo=totalhits`,
+        { signal: AbortSignal.timeout(7000) }
+      );
 
-    const pageTitle = hits[0].title;
+      const sData = await sRes.json();
+      const hits = sData?.query?.search || [];
+      if (!hits.length) return;
 
-    const eRes = await fetch(`https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&titles=${encodeURIComponent(pageTitle)}&format=json&origin=*&exsentences=5`, { signal: AbortSignal.timeout(7000) });
-    const eData = await eRes.json();
+      const pageTitle = hits[0].title;
 
-    const pages = eData?.query?.pages || {};
-    const page = Object.values(pages)[0];
-    if (!page || page.missing !== undefined) return;
+      const eRes = await fetch(
+        `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&titles=${encodeURIComponent(pageTitle)}&format=json&origin=*&exsentences=5`,
+        { signal: AbortSignal.timeout(7000) }
+      );
 
-    const extract = (page.extract || '').replace(/\n+/g, ' ').trim();
-    if (!extract) return;
+      const eData = await eRes.json();
+      const pages = eData?.query?.pages || {};
+      const page = Object.values(pages)[0];
+      if (!page || page.missing !== undefined) return;
 
-    const overlap = text.toLowerCase().split(/\s+/)
-      .filter(w => w.length > 3 && extract.toLowerCase().includes(w)).length;
+      const extract = (page.extract || '').replace(/\n+/g, ' ').trim();
+      if (!extract) return;
 
-    if (overlap > 5) {
-      results.push({
-        query,
-        title: pageTitle,
-        extract,
-        url: `https://en.wikipedia.org/wiki/${encodeURIComponent(pageTitle)}`,
-        hitCount: sData.query?.searchinfo?.totalhits || 0
-      });
+      const overlap = text.toLowerCase().split(/\s+/)
+        .filter(w => w.length > 3 && extract.toLowerCase().includes(w)).length;
 
-      score -= 1.2;
+      if (overlap > 5) {
+        results.push({
+          query,
+          title: pageTitle,
+          extract,
+          url: `https://en.wikipedia.org/wiki/${encodeURIComponent(pageTitle)}`,
+          hitCount: sData.query?.searchinfo?.totalhits || 0
+        });
+
+        score -= 1.2;
+      }
+
+    } catch (e) {
+      console.error('Wiki error:', e);
     }
-
-  } catch (e) {
-    console.error('Wiki error:', e);
-  }
-}));
-
+  })
+);
   if (!results.length) {
     score+=1.5;
     signals.push({ type:'fake', msg:`Wikipedia: No articles found for "${queries.slice(0,2).join('", "')}" — claims not documented` });
