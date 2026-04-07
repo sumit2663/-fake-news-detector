@@ -363,7 +363,7 @@ async function fetchArticle() {
     const repEl=document.getElementById('fpRep');
     if (repEl) { repEl.textContent=repLabel; repEl.className=`fp-rep ${repClass}`; }
     safeText('fpTitle',parsed.title||'No title found');
-    safeText('fpText',parsed.text.slice(0,280)+'...');
+    safeText('fpText', parsed.text ? parsed.text.slice(0, 280) + '...' : 'No preview available');
     safeText('fpMeta',[parsed.author?`Author: ${parsed.author}`:'',parsed.date?`Published: ${parsed.date}`:'',`${parsed.wordCount} words via ${proxyUsed}`].filter(Boolean).join(' · '));
     safeShow('fetchPreview');
     setSrc('fetch','ok',`${parsed.wordCount} WORDS`);
