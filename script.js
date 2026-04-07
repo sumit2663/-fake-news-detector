@@ -151,7 +151,7 @@ let scanHist = JSON.parse(localStorage.getItem('ts_h') || '[]');
 // ClaimBuster key: get free key at idir.uta.edu/claimbuster and paste below
 const API_KEYS = {
   newsdata:    'pub_3d644b657a84487b945a7d9e07184556',
-  claimbuster: localStorage.getItem('ts_key_claimbuster') || '',
+  claimbuster: 'YOUR_REAL_API_KEY'
 };
 
 const EXAMPLES_TEXT = [
