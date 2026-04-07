@@ -520,6 +520,17 @@ async function queryWikipedia(text) {
         { signal: AbortSignal.timeout(7000) }
       );
 
+      // ✅ ADD HERE
+      const sData = await sRes.json();
+
+      const pageTitle = sData?.query?.search?.[0]?.title;
+      if (!pageTitle) return;
+
+      const eRes = await fetch(
+        `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&titles=${encodeURIComponent(pageTitle)}&format=json&origin=*`,
+        { signal: AbortSignal.timeout(7000) }
+      );
+
 const eData = await eRes.json();
 const pages = eData?.query?.pages || {};
 const page = Object.values(pages)[0];
@@ -564,10 +575,16 @@ if (overlap >= 3 && overlapRatio > threshold) {
   console.error('Wiki error:', e);
     }
   if (!results.length) {
-    score+=1.5;
-    signals.push({ type:'fake', msg:`Wikipedia: No articles found for "${queries.slice(0,2).join('", "')}" — claims not documented` });
-  } else {
-    signals.push({ type:'real', msg:`Wikipedia: ${results.length} topic(s) verified with real article extracts (${results.map(r=>r.title).join(', ')})` });
+  score += 1.5;
+  signals.push({
+    type:'fake',
+    msg:`Wikipedia: No articles found for "${queries.slice(0,2).join('", "')}" — claims not documented`
+  });
+} else {
+  signals.push({
+    type:'real',
+    msg:`Wikipedia: ${results.length} topic(s) verified with real article extracts (${results.map(r=>r.title).join(', ')})`
+  });
   }
 
   setSrc('wiki',results.length>0?'ok':'fail',results.length>0?`${results.length} FOUND`:'NOT FOUND');
