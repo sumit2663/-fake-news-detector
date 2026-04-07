@@ -520,45 +520,48 @@ async function queryWikipedia(text) {
         { signal: AbortSignal.timeout(7000) }
       );
 
-      const sData = await sRes.json();
-      const hits = sData?.query?.search || [];
-      if (!hits.length) return;
+const eData = await eRes.json();
+const pages = eData?.query?.pages || {};
+const page = Object.values(pages)[0];
+if (!page || page.missing !== undefined) return;
 
-      const pageTitle = hits[0].title;
+const extract = (page.extract || '').replace(/\n+/g, ' ').trim();
+if (!extract) return;
 
-      const eRes = await fetch(
-        `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&titles=${encodeURIComponent(pageTitle)}&format=json&origin=*&exsentences=5`,
-        { signal: AbortSignal.timeout(7000) }
-      );
+const extractWords = extract.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+if (!extractWords.length) return;
 
-      const eData = await eRes.json();
-      const pages = eData?.query?.pages || {};
-      const page = Object.values(pages)[0];
-      if (!page || page.missing !== undefined) return;
+// 🔍 Normalize input words
+const inputWords = text.toLowerCase().split(/\s+/)
+  .filter(w => w.length > 3);
 
-      const extract = (page.extract || '').replace(/\n+/g, ' ').trim();
-      if (!extract) return;
+// 🔍 Overlap check (faster + cleaner)
+const extractSet = new Set(extractWords);
 
-      const overlap = text.toLowerCase().split(/\s+/)
-        .filter(w => w.length > 3 && extract.toLowerCase().includes(w)).length;
+const overlap = inputWords.filter(w => extractSet.has(w)).length;
 
-      if (overlap > 5) {
-        results.push({
-          query,
-          title: pageTitle,
-          extract,
-          url: `https://en.wikipedia.org/wiki/${encodeURIComponent(pageTitle)}`,
-          hitCount: sData.query?.searchinfo?.totalhits || 0
-        });
+// 🧠 Safe ratio
+const overlapRatio = overlap / extractWords.length;
 
-        score -= 1.2;
-      }
+// 🎯 Dynamic threshold (smart)
+const threshold = extractWords.length < 80 ? 0.03 : 0.05;
 
-    } catch (e) {
-      console.error('Wiki error:', e);
+// ✅ Decision
+if (overlapRatio > threshold && overlap >= 3) {
+  results.push({
+    query,
+    title: pageTitle,
+    extract,
+    url: `https://en.wikipedia.org/wiki/${encodeURIComponent(pageTitle)}`,
+    hitCount: sData.query?.searchinfo?.totalhits || 0
+  });
+
+  score -= 1.2;
+}
+
+} catch (e) {
+  console.error('Wiki error:', e);
     }
-  })
-);
   if (!results.length) {
     score+=1.5;
     signals.push({ type:'fake', msg:`Wikipedia: No articles found for "${queries.slice(0,2).join('", "')}" — claims not documented` });
