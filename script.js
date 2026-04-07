@@ -146,13 +146,9 @@ const SESSION = {
 };
 let scanHist = JSON.parse(localStorage.getItem('ts_h') || '[]');
 
-// API Keys
-// NewsData.io key is hardcoded — no UI button needed
-// ClaimBuster key: get free key at idir.uta.edu/claimbuster and paste below
-const API_KEYS = {
-  newsdata:    'pub_3d644b657a84487b945a7d9e07184556',
-  claimbuster: 'YOUR_REAL_API_KEY'
-};
+// No API keys required — all sources are free and open:
+// Wikipedia REST API, RSS feeds (NDTV/BBC/TOI/Reuters/Google News), local sentence analysis
+const API_KEYS = { newsdata: true, claimbuster: false }; // kept for compatibility only
 
 const EXAMPLES_TEXT = [
   'Watch: Trump completely loses it on Twitter after CNN calls him out for lying again (video)',
@@ -190,8 +186,8 @@ function checkKeyInput() {}
 function toggleApiConfig() {}
 
 function updateSourceBarKeyStatus() {
-  setSrc('newsdata', API_KEYS.newsdata ? 'ok' : 'fail', API_KEYS.newsdata ? 'READY' : 'NO KEY');
-  setSrc('claim',    API_KEYS.claimbuster ? 'ok' : 'fail', API_KEYS.claimbuster ? 'READY' : 'NO KEY');
+  setSrc('newsdata', 'ok', 'READY');
+  setSrc('claim',    'ok', 'READY');
 }
 
 // ══════════════════════════════════════════
@@ -202,9 +198,9 @@ function loadDataset() {
     .then(r => r.ok ? r.json() : Promise.reject())
     .then(d => {
       dataset = d; isLoaded = true;
-      tick(`DATASET ONLINE — ${d.length} ENTRIES — WIKIPEDIA FREE — NEWSDATA.IO ${API_KEYS.newsdata ? 'READY' : 'NEEDS KEY'} — CLAIMBUSTER ${API_KEYS.claimbuster ? 'READY' : 'NEEDS KEY'}`);
+      tick(`DATASET ONLINE — ${d.length} ENTRIES — WIKIPEDIA FREE — LIVE NEWS RSS (NDTV·BBC·TOI·REUTERS) — SENTENCE ANALYSIS READY`);
     })
-    .catch(() => tick('DATASET OFFLINE — LIVE API MODE — SET API KEYS VIA ⚙ BUTTON FOR FULL POWER'));
+    .catch(() => tick('DATASET OFFLINE — LIVE API MODE — WIKIPEDIA + RSS NEWS (NDTV·BBC·TOI·REUTERS) + SENTENCE ANALYSIS ALL FREE'));
 }
 
 // ══════════════════════════════════════════
@@ -363,7 +359,7 @@ async function fetchArticle() {
     const repEl=document.getElementById('fpRep');
     if (repEl) { repEl.textContent=repLabel; repEl.className=`fp-rep ${repClass}`; }
     safeText('fpTitle',parsed.title||'No title found');
-    safeText('fpText', parsed.text ? parsed.text.slice(0, 280) + '...' : 'No preview available');
+    safeText('fpText',parsed.text.slice(0,280)+'...');
     safeText('fpMeta',[parsed.author?`Author: ${parsed.author}`:'',parsed.date?`Published: ${parsed.date}`:'',`${parsed.wordCount} words via ${proxyUsed}`].filter(Boolean).join(' · '));
     safeShow('fetchPreview');
     setSrc('fetch','ok',`${parsed.wordCount} WORDS`);
@@ -512,79 +508,33 @@ async function queryWikipedia(text) {
     return { score:0, signals:[], results:[] };
   }
 
- await Promise.allSettled(
-  queries.map(async (query) => {
+  await Promise.allSettled(queries.map(async query => {
     try {
-      const sRes = await fetch(
-        `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*&srlimit=2&srinfo=totalhits`,
-        { signal: AbortSignal.timeout(7000) }
-      );
+      const sRes=await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*&srlimit=2&srinfo=totalhits`,{signal:AbortSignal.timeout(7000)});
+      const sData=await sRes.json();
+      const hits=sData?.query?.search||[];
+      if (!hits.length) return;
 
-      // ✅ ADD HERE
-      const sData = await sRes.json();
+      const pageTitle=hits[0].title;
+      const eRes=await fetch(`https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&titles=${encodeURIComponent(pageTitle)}&format=json&origin=*&exsentences=5`,{signal:AbortSignal.timeout(7000)});
+      const eData=await eRes.json();
+      const pages=eData?.query?.pages||{};
+      const page=Object.values(pages)[0];
+      if (!page||page.missing!==undefined) return;
 
-      const pageTitle = sData?.query?.search?.[0]?.title;
-      if (!pageTitle) return;
+      const extract=(page.extract||'').replace(/\n+/g,' ').trim();
+      if (!extract) return;
 
-      const eRes = await fetch(
-        `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&titles=${encodeURIComponent(pageTitle)}&format=json&origin=*`,
-        { signal: AbortSignal.timeout(7000) }
-      );
+      results.push({ query, title:pageTitle, extract, url:`https://en.wikipedia.org/wiki/${encodeURIComponent(pageTitle)}`, hitCount:sData.query?.searchinfo?.totalhits||0 });
+      score-=1.2;
+    } catch {}
+  }));
 
-const eData = await eRes.json();
-const pages = eData?.query?.pages || {};
-const page = Object.values(pages)[0];
-if (!page || page.missing !== undefined) return;
-
-const extract = (page.extract || '').replace(/\n+/g, ' ').trim();
-const extract = (page.extract || '').replace(/\n+/g, ' ').trim();
-if (!extract) return;
-
-// 🔍 Extract words
-const extractWords = extract.toLowerCase().split(/\s+/).filter(w => w.length > 2);
-
-// 🔍 Input words
-const inputWords = text.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-
-// ⚡ Fast lookup
-const extractSet = new Set(extractWords);
-
-// 🔍 Overlap
-const overlap = inputWords.filter(w => extractSet.has(w)).length;
-
-// 🧠 Ratio
-const overlapRatio = overlap / extractWords.length;
-
-// 🎯 Dynamic threshold
-const threshold = extractWords.length < 80 ? 0.03 : 0.05;
-
-// ✅ FINAL decision
-if (overlap >= 3 && overlapRatio > threshold) {
-  results.push({
-    query,
-    title: pageTitle,
-    extract,
-    url: `https://en.wikipedia.org/wiki/${encodeURIComponent(pageTitle)}`,
-    hitCount: sData.query?.searchinfo?.totalhits || 0
-  });
-
-  score -= 1.2;
-}
-
-} catch (e) {
-  console.error('Wiki error:', e);
-    }
   if (!results.length) {
-  score += 1.5;
-  signals.push({
-    type:'fake',
-    msg:`Wikipedia: No articles found for "${queries.slice(0,2).join('", "')}" — claims not documented`
-  });
-} else {
-  signals.push({
-    type:'real',
-    msg:`Wikipedia: ${results.length} topic(s) verified with real article extracts (${results.map(r=>r.title).join(', ')})`
-  });
+    score+=1.5;
+    signals.push({ type:'fake', msg:`Wikipedia: No articles found for "${queries.slice(0,2).join('", "')}" — claims not documented` });
+  } else {
+    signals.push({ type:'real', msg:`Wikipedia: ${results.length} topic(s) verified with real article extracts (${results.map(r=>r.title).join(', ')})` });
   }
 
   setSrc('wiki',results.length>0?'ok':'fail',results.length>0?`${results.length} FOUND`:'NOT FOUND');
@@ -592,12 +542,23 @@ if (overlap >= 3 && overlapRatio > threshold) {
 }
 
 // ══════════════════════════════════════════
-// NEWSDATA.IO — REPLACES GDELT
-// Real live news search, no CORS issues with API key
-// API: https://newsdata.io/api/1/latest?apikey=KEY&q=QUERY
+// LIVE NEWS SEARCH — RSS FEEDS (NO API KEY)
+// Sources: Google News, NDTV, Times of India,
+//          BBC, Reuters — all free public RSS
+// Uses allorigins CORS proxy (same as article fetch)
 // ══════════════════════════════════════════
-async function queryNewsData(text) {
-  setSrc('newsdata','active','QUERYING');
+
+// Free public RSS feeds — CORS-accessible via allorigins proxy
+const RSS_FEEDS = [
+  { name:'Google News',     url:'https://news.google.com/rss/search?q={QUERY}&hl=en-IN&gl=IN&ceid=IN:en' },
+  { name:'NDTV',            url:'https://feeds.feedburner.com/ndtvnews-latest' },
+  { name:'Times of India',  url:'https://timesofindia.indiatimes.com/rssfeedstopstories.cms' },
+  { name:'BBC News',        url:'https://feeds.bbci.co.uk/news/rss.xml' },
+  { name:'Reuters',         url:'https://feeds.reuters.com/reuters/topNews' },
+];
+
+async function queryLiveNews(text) {
+  setSrc('newsdata','active','SEARCHING');
   const signals=[]; let score=0; let articles=[];
 
   const query = buildNewsQuery(text);
@@ -606,35 +567,67 @@ async function queryNewsData(text) {
     return { score:0, signals:[], articles:[] };
   }
 
-  try {
-    const url=`https://newsdata.io/api/1/latest?apikey=${encodeURIComponent(API_KEYS.newsdata)}&q=${encodeURIComponent(query)}&language=en&prioritydomain=top`;
-    const res=await fetch(url,{signal:AbortSignal.timeout(10000)});
+  const queryWords = query.toLowerCase().split(/\s+/).filter(w=>w.length>2);
 
-    if (!res.ok) {
-      const errData=await res.json().catch(()=>null);
-      const errMsg=errData?.results?.message||`HTTP ${res.status}`;
-      throw new Error(errMsg);
-    }
+  // Try Google News RSS first (search-based) then fallback to other feeds
+  const feedsToTry = [
+    { name:'Google News', url:`https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en&gl=US&ceid=US:en` },
+    { name:'NDTV',        url:'https://feeds.feedburner.com/ndtvnews-latest' },
+    { name:'Times of India', url:'https://timesofindia.indiatimes.com/rssfeedstopstories.cms' },
+    { name:'BBC News',    url:'https://feeds.bbci.co.uk/news/rss.xml' },
+    { name:'Reuters',     url:'https://feeds.reuters.com/reuters/topNews' },
+  ];
 
-    const data=await res.json();
-    if (data.status!=='success') throw new Error(data.results?.message||'API error');
+  // Fetch all feeds in parallel via allorigins proxy
+  const fetched = await Promise.allSettled(
+    feedsToTry.map(async feed => {
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(feed.url)}`;
+      const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) throw new Error('proxy error');
+      const data = await res.json();
+      if (!data.contents || data.contents.length < 50) throw new Error('empty');
+      return { name: feed.name, xml: data.contents };
+    })
+  );
 
-    articles=data.results||[];
+  // Parse RSS XML and find matching articles
+  const parser = new DOMParser();
+  const matched = [];
 
-    if (!articles.length) {
-      score+=2;
-      signals.push({ type:'fake', msg:`NewsData.io: Zero articles found for "${query}" in top global outlets — story not in verified news` });
-    } else {
-      score-=Math.min(articles.length*0.35,3);
-      signals.push({ type:'real', msg:`NewsData.io: ${articles.length} real news article(s) found covering this topic` });
-    }
-    setSrc('newsdata',articles.length>0?'ok':'fail',articles.length>0?`${articles.length} ARTICLES`:'0 RESULTS');
-  } catch(e) {
-    const msg=e.message||'Unknown error';
-    signals.push({ type:'neutral', msg:`NewsData.io: ${msg}` });
-    setSrc('newsdata','fail','ERROR');
-    safeHTML('newsdataResults',`<div class="error-msg">⚠ NewsData.io error: ${msg}${e.message?.includes('key')?'<br>Check your API key in ⚙ API KEYS settings.':''}</div>`);
-    return { score:0, signals, articles:[] };
+  fetched.forEach(result => {
+    if (result.status !== 'fulfilled') return;
+    const { name, xml } = result.value;
+    try {
+      const doc = parser.parseFromString(xml, 'application/xml');
+      const items = Array.from(doc.querySelectorAll('item'));
+      items.forEach(item => {
+        const title = item.querySelector('title')?.textContent?.trim() || '';
+        const desc  = item.querySelector('description')?.textContent?.replace(/<[^>]+>/g,'').trim() || '';
+        const link  = item.querySelector('link')?.textContent?.trim() ||
+                      item.querySelector('guid')?.textContent?.trim() || '#';
+        const pubDate = item.querySelector('pubDate')?.textContent?.trim() || '';
+        const combined = (title + ' ' + desc).toLowerCase();
+        // Score how many query words match
+        const matchCount = queryWords.filter(w => combined.includes(w)).length;
+        if (matchCount > 0) {
+          matched.push({ title, desc: desc.slice(0,150), link, source: name, pubDate, matchScore: matchCount });
+        }
+      });
+    } catch {}
+  });
+
+  // Sort by relevance
+  matched.sort((a,b) => b.matchScore - a.matchScore);
+  articles = matched.slice(0, 8);
+
+  if (articles.length === 0) {
+    score += 2;
+    signals.push({ type:'fake', msg:`Live News: Zero matching articles in NDTV, TOI, BBC, Reuters, Google News — story absent from major outlets` });
+    setSrc('newsdata','fail','0 RESULTS');
+  } else {
+    score -= Math.min(articles.length * 0.35, 3);
+    signals.push({ type:'real', msg:`Live News: ${articles.length} article(s) found across NDTV, BBC, Reuters and other outlets covering this topic` });
+    setSrc('newsdata','ok',`${articles.length} FOUND`);
   }
 
   return { score, signals, articles };
@@ -655,111 +648,69 @@ function buildNewsQuery(text) {
 }
 
 // ══════════════════════════════════════════
-// CLAIMBUSTER — uses API key in header
-// Without key: skipped with helpful message
+// SENTENCE CREDIBILITY SCORER (LOCAL — NO API)
+// Replaces ClaimBuster — scores sentences using
+// built-in linguistic analysis patterns.
+// Checks: hedging language, specificity, sourcing,
+// emotional loading, numerical claims, passives.
 // ══════════════════════════════════════════
-async function queryClaimBuster(text) {
+async function queryCredibilityScorer(text) {
+  setSrc('claim','active','ANALYZING');
+  const signals=[]; let score=0; let claims=[];
 
-  // ✅ CLEAR OLD RESULTS FIRST
-  safeHTML('claimResults', '');
-
-  const signals=[]; 
-  let score=0; 
-  let claims=[];
-
-  const key = (API_KEYS.claimbuster || '').trim();
-
-  // 🔑 CHECK FIRST (before UI state)
-  if (!key || key === 'YOUR_REAL_API_KEY') {
-    const msg='ClaimBuster: No key set. Add your API key.';
-    
-    setSrc('claim','','SKIPPED');   // cleaner than "fail"
-
-    safeHTML('claimResults',
-      `<div class="nokey-msg">🔑 ClaimBuster not configured</div>`
-    );
-
-    signals.push({ type:'neutral', msg });
-    return { score:0, signals, claims:[] };
-  }
-
-  // ✅ ONLY NOW show active
-  setSrc('claim','active','SCORING');
-
+  // Split into sentences
   const sentences = text
     .replace(/([.!?])\s+(?=[A-Z])/g,'$1\n')
     .split('\n')
     .map(s=>s.trim())
-    .filter(s=>s.length>25 && s.length<400)
-    .slice(0,5);
+    .filter(s=>s.length>20 && s.length<500)
+    .slice(0,6);
 
   if (!sentences.length) {
     setSrc('claim','','SKIPPED');
     return { score:0, signals:[], claims:[] };
   }
 
-  const settled = await Promise.allSettled(
-    sentences.map(async sentence => {
-      const res = await fetch(
-        `https://idir.uta.edu/claimbuster/api/v2/score/text/${encodeURIComponent(sentence)}`,
-        {
-          method:'GET',
-          headers:{ 
-            'Accept':'application/json', 
-            'x-api-key': key 
-          },
-          signal:AbortSignal.timeout(8000),
-        }
-      );
+  // Score each sentence using local heuristics
+  claims = sentences.map(sentence => {
+    const t = sentence.toLowerCase();
+    let s = 0.3; // neutral baseline
 
-      if (!res.ok) throw new Error('HTTP '+res.status);
+    // INCREASES credibility score (higher = more check-worthy)
+    if (/\b\d{4}\b/.test(t)) s += 0.15;                                    // year mentioned
+    if (/\b\d+(\.\d+)?%/.test(t)) s += 0.2;                               // percentage
+    if (/\b(billion|million|thousand|crore|lakh)\b/.test(t)) s += 0.15;   // large numbers
+    if (/\b(said|says|confirmed|announced|stated|told|according)\b/.test(t)) s += 0.2; // attribution
+    if (/\b(government|minister|president|court|parliament|police)\b/.test(t)) s += 0.2; // institutions
+    if (/\b(died|killed|arrested|sentenced|convicted|acquitted)\b/.test(t)) s += 0.25; // strong factual
+    if (/\b(study|research|report|survey|data|statistics)\b/.test(t)) s += 0.2; // evidence reference
+    if (/\b(january|february|march|april|may|june|july|august|september|october|november|december)\b/.test(t)) s += 0.1; // specific date
 
-      const data = await res.json();
-      return { sentence, claimScore:data?.results?.[0]?.score ?? 0 };
-    })
-  );
+    // DECREASES credibility score (less check-worthy / more opinion)
+    if (/\b(allegedly|reportedly|claimed|rumored|sources say)\b/.test(t)) s -= 0.1;
+    if (/\b(everyone|nobody|always|never|all|totally|completely|absolutely)\b/.test(t)) s -= 0.1;
+    if (/\b(i think|i believe|in my opinion|some people|many people)\b/.test(t)) s -= 0.2;
+    if (/[!]{2,}/.test(t)) s -= 0.15;                                     // multiple exclamation marks
 
-  const fulfilled = settled.filter(r => r.status === 'fulfilled');
+    return { sentence, claimScore: Math.max(0, Math.min(1, s)) };
+  });
 
-  if (fulfilled.length > 0) {
-    claims = fulfilled.map(r => r.value).sort((a,b)=>b.claimScore-a.claimScore);
+  claims.sort((a,b) => b.claimScore - a.claimScore);
 
-    const high = claims.filter(c=>c.claimScore>0.7).length;
-    const avg = claims.reduce((s,c)=>s+c.claimScore,0)/claims.length;
+  const highClaims = claims.filter(c => c.claimScore > 0.65).length;
+  const avgScore = claims.reduce((s,c) => s+c.claimScore, 0) / claims.length;
 
-    if (high >= 3) {
-      score += 1.5;
-      signals.push({
-        type:'fake',
-        msg:`ClaimBuster: ${high} high-risk claims`
-      });
-    } else {
-      signals.push({
-        type:'neutral',
-        msg:`ClaimBuster avg score ${(avg*100).toFixed(0)}%`
-      });
-    }
-
-    setSrc('claim','ok',`${claims.length} SCORED`);
-
-  } else {
-    const failReason = settled[0]?.reason?.message || 'Unknown error';
-
-    let label = failReason.includes('401') || failReason.includes('403')
-      ? 'INVALID KEY'
-      : 'API ERROR';
-
-    setSrc('claim','fail', label);
-
-    safeHTML('claimResults',
-      `<div class="error-msg">⚠ ${failReason}</div>`
-    );
-
-    signals.push({ type:'neutral', msg: failReason });
+  if (highClaims >= 3) {
+    score += 1;
+    signals.push({ type:'fake', msg:`Sentence Analysis: ${highClaims} sentences contain strong verifiable claims (avg ${(avgScore*100).toFixed(0)}% specificity) — high factual density, verify sources` });
+  } else if (claims.length > 0) {
+    signals.push({ type:'neutral', msg:`Sentence Analysis: ${claims.length} sentences scored — avg specificity: ${(avgScore*100).toFixed(0)}% (local analysis, no API needed)` });
   }
 
+  setSrc('claim','ok',`${claims.length} SCORED`);
   return { score, signals, claims };
 }
+
 
 // ══════════════════════════════════════════
 // STRUCTURAL ANALYSIS
@@ -914,13 +865,13 @@ async function checkNews() {
   setStep(4);
   const wikiResult=await queryWikipedia(analyzeText);
 
-  // NewsData.io
+  // NewsData / RSS Live News
   setStep(5);
-  const newsdataResult=await queryNewsData(analyzeText);
+  const newsdataResult=await queryLiveNews(analyzeText);
 
-  // ClaimBuster
+  // Sentence Credibility Scorer (local, no API)
   setStep(6);
-  const claimResult=await queryClaimBuster(analyzeText.slice(0,1200));
+  const claimResult=await queryCredibilityScorer(analyzeText.slice(0,1200));
 
   // Compute
   setStep(7);
@@ -929,7 +880,7 @@ async function checkNews() {
   await dl(150);
 
   const total=
-    domainScore         *1.3+
+    domainScore         *1.5+
     structural.score    *1.0+
     vocabulary.score    *0.8+
     newsdataResult.score*1.0+
@@ -968,7 +919,7 @@ function displayResult(d) {
   if(vp)vp.className=`verdict-pulse ${v.cls}`;
   const vl=document.getElementById('verdictLabel');
   if(vl){vl.textContent=v.text;vl.className=`verdict-label ${v.cls}`;}
-  safeText('verdictSub',`Confidence: ${conf}% | Score: ${total.toFixed(2)} | Domain + Wikipedia + NewsData + ClaimBuster + Dataset`);
+  safeText('verdictSub',`Confidence: ${conf}% | Score: ${total.toFixed(2)} | Domain + Wikipedia + Live News RSS + Sentence Analysis + Dataset`);
   safeText('verdictScore',(total>=0?'+':'')+total.toFixed(1));
 
   const fp=Math.min(100,Math.max(0,Math.round(50+total*4.2)));
@@ -1016,34 +967,31 @@ function displayResult(d) {
         </div>`).join('')
     :'<div class="wiki-none">⚠ No Wikipedia articles found for key topics in this text.</div>');
 
-  // NewsData.io results (only set if not already set by error handler)
+  // Live News RSS results
   if (!document.getElementById('newsdataResults').querySelector('.nokey-msg,.error-msg')) {
     safeHTML('newsdataResults', newsdataResult.articles.length
       ? newsdataResult.articles.slice(0,6).map((a,i)=>`
           <div class="newsdata-item" style="animation-delay:${i*.06}s">
-            <div class="nd-hed"><a href="${a.link||a.url||'#'}" target="_blank" rel="noopener">${a.title||'Article'}</a></div>
-            <div class="nd-meta">
-              ${a.source_id||a.domain||''} ${a.pubDate?'· '+a.pubDate.slice(0,10):''}
-              ${a.country?.length?'· '+a.country[0].toUpperCase():''}
-            </div>
-            ${a.description?`<div class="nd-desc">${a.description.slice(0,120)}...</div>`:''}
+            <div class="nd-hed"><a href="${a.link||'#'}" target="_blank" rel="noopener">${a.title||'Article'}</a></div>
+            <div class="nd-meta">${a.source||''} ${a.pubDate?'· '+a.pubDate.slice(0,16):''}</div>
+            ${a.desc?`<div class="nd-desc">${a.desc}</div>`:''}
           </div>`).join('')
-      : '<div class="newsdata-none">⚠ Zero articles found for this topic — story not in verified global news index.</div>');
+      : '<div class="newsdata-none">⚠ No matching articles found in NDTV, BBC, Reuters, TOI or Google News for this topic.</div>');
   }
 
+  // Sentence Credibility Analysis results
   if (!document.getElementById('claimResults').querySelector('.nokey-msg,.error-msg')) {
-  safeHTML('claimResults', claimResult.claims.length
-    ? claimResult.claims.slice(0,5).map((c,i)=>{
-        const pct=Math.round(c.claimScore*100);
-        const cls=pct>70?'hi':pct>40?'mid':'lo';
-        return `<div class="claim-item">
-          <div class="claim-pct-num ${cls}">${pct}%</div>
-          <div class="claim-text">${c.sentence}</div>
-        </div>`;
-      }).join('')
-    : '<div class="claim-none">No claims detected</div>'
-  );
-}
+    safeHTML('claimResults', claimResult.claims.length
+      ? claimResult.claims.slice(0,5).map((c,i)=>{
+          const pct=Math.round(c.claimScore*100);
+          const cls=pct>65?'hi':pct>45?'mid':'lo';
+          return `<div class="claim-item" style="animation-delay:${i*.06}s">
+            <div class="claim-pct-wrap"><div class="claim-pct-num ${cls}">${pct}%</div><div class="claim-pct-lbl">SPECIFIC</div></div>
+            <div class="claim-text">${c.sentence}</div>
+          </div>`;
+        }).join('')
+      : '');
+  }
 
   const allSigs=[
     ...domainSignals,
@@ -1082,11 +1030,11 @@ function copyReport() {
     domainResult?`DOMAIN: ${domainResult.domain} — ${domainResult.rep.toUpperCase()} — ${domainResult.cat} — Bias: ${domainResult.bias}`:'',
     '','--- WIKIPEDIA ---',
     ...(wikiResult.results.length?wikiResult.results.map(r=>`• ${r.title}: ${r.extract.slice(0,120)}... ${r.url}`):['• No Wikipedia articles found']),
-    '','--- NEWSDATA.IO LIVE NEWS ---',
-    `${newsdataResult.articles.length} real news articles found`,
-    ...newsdataResult.articles.slice(0,4).map(a=>`• ${a.title||'Article'} — ${a.source_id||''} — ${a.link||a.url||''}`),
-    '','--- CLAIMBUSTER AI ---',
-    ...(claimResult.claims.length?claimResult.claims.slice(0,4).map(c=>`• ${Math.round(c.claimScore*100)}% check-worthy: "${c.sentence}"`):['• API key not set or unavailable']),
+    '','--- LIVE NEWS (NDTV · BBC · TOI · REUTERS) ---',
+    `${newsdataResult.articles.length} matching news articles found`,
+    ...newsdataResult.articles.slice(0,4).map(a=>`• ${a.title||'Article'} — ${a.source||''} — ${a.link||''}`),
+    '','--- SENTENCE CREDIBILITY ANALYSIS (LOCAL) ---',
+    ...(claimResult.claims.length?claimResult.claims.slice(0,4).map(c=>`• ${Math.round(c.claimScore*100)}% specificity: "${c.sentence}"`):['• No sentences scored']),
     '',`INPUT: ${analyzeText.slice(0,250)}...`,'=== END REPORT ==='
   ].filter(l=>l!==undefined).join('\n');
   navigator.clipboard.writeText(lines).then(()=>toast('REPORT COPIED')).catch(()=>toast('CLIPBOARD UNAVAILABLE'));
