@@ -529,7 +529,7 @@ async function queryWikipedia(text) {
       const extract=(page.extract||'').replace(/\n+/g,' ').trim();
       if (!extract) return;
 
-      r// ✅ ADD THIS BLOCK HERE
+      // ✅ ADD THIS BLOCK HERE
         const overlap = text.toLowerCase().split(/\s+/)
           .filter(w => w.length > 3 && extract.toLowerCase().includes(w)).length;
       
@@ -896,7 +896,7 @@ async function checkNews() {
   await dl(150);
 
   const total=
-    domainScore         *1.0+
+    domainScore         *1.3+
     structural.score    *1.0+
     vocabulary.score    *0.8+
     newsdataResult.score*1.0+
@@ -998,17 +998,19 @@ function displayResult(d) {
       : '<div class="newsdata-none">⚠ Zero articles found for this topic — story not in verified global news index.</div>');
   }
 
+  if (!document.getElementById('claimResults').querySelector('.nokey-msg,.error-msg')) {
   safeHTML('claimResults', claimResult.claims.length
-  ? claimResult.claims.slice(0,5).map((c,i)=>{
-      const pct=Math.round(c.claimScore*100);
-      const cls=pct>70?'hi':pct>40?'mid':'lo';
-      return `<div class="claim-item">
-        <div class="claim-pct-num ${cls}">${pct}%</div>
-        <div class="claim-text">${c.sentence}</div>
-      </div>`;
-    }).join('')
-  : '<div class="claim-none">No claims detected</div>'
-);
+    ? claimResult.claims.slice(0,5).map((c,i)=>{
+        const pct=Math.round(c.claimScore*100);
+        const cls=pct>70?'hi':pct>40?'mid':'lo';
+        return `<div class="claim-item">
+          <div class="claim-pct-num ${cls}">${pct}%</div>
+          <div class="claim-text">${c.sentence}</div>
+        </div>`;
+      }).join('')
+    : '<div class="claim-none">No claims detected</div>'
+  );
+}
 
   const allSigs=[
     ...domainSignals,
