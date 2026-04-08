@@ -526,7 +526,7 @@ async function queryWikipedia(text) {
       if (!extract) return;
 
       results.push({ query, title:pageTitle, extract, url:`https://en.wikipedia.org/wiki/${encodeURIComponent(pageTitle)}`, hitCount:sData.query?.searchinfo?.totalhits||0 });
-      score-=1.2;
+      score-=0.7;  // each verified topic: small credibility boost, not overwhelming
     } catch {}
   }));
 
@@ -620,13 +620,24 @@ async function queryLiveNews(text) {
   matched.sort((a,b) => b.matchScore - a.matchScore);
   articles = matched.slice(0, 8);
 
-  if (articles.length === 0) {
-    score += 2;
-    signals.push({ type:'fake', msg:`Live News: Zero matching articles in NDTV, TOI, BBC, Reuters, Google News — story absent from major outlets` });
+  // Separate Google News (search-targeted) from general feeds (BBC/NDTV etc.)
+  const googleMatches = matched.filter(a => a.source === 'Google News');
+  const generalMatches = matched.filter(a => a.source !== 'Google News');
+
+  if (googleMatches.length === 0 && generalMatches.length === 0) {
+    // Nothing found anywhere — moderate fake signal
+    score += 1.5;
+    signals.push({ type:'fake', msg:`Live News: No matching articles found in NDTV, TOI, BBC, Reuters, or Google News — story may not be in major outlets` });
     setSrc('newsdata','fail','0 RESULTS');
+  } else if (googleMatches.length > 0) {
+    // Google News search specifically found it — strong credibility signal
+    score -= Math.min(googleMatches.length * 0.4, 2);
+    signals.push({ type:'real', msg:`Live News: ${googleMatches.length} article(s) found by Google News search + ${generalMatches.length} from NDTV/BBC/Reuters feeds` });
+    setSrc('newsdata','ok',`${articles.length} FOUND`);
   } else {
-    score -= Math.min(articles.length * 0.35, 3);
-    signals.push({ type:'real', msg:`Live News: ${articles.length} article(s) found across NDTV, BBC, Reuters and other outlets covering this topic` });
+    // Only general feeds matched — weak signal (general feeds always have news)
+    score -= 0.5;
+    signals.push({ type:'real', msg:`Live News: ${generalMatches.length} related article(s) found in NDTV/BBC/Reuters general feeds` });
     setSrc('newsdata','ok',`${articles.length} FOUND`);
   }
 
@@ -761,7 +772,7 @@ function analyzeVocabulary(text) {
   const t=text.toLowerCase().replace(/[^\w\s.]/g,' ');
   const words=t.split(/\s+/); let score=0; const found={fake:[],real:[]};
   words.forEach(w=>{const s=VOCAB[w];if(s!==undefined){score+=s;if(s>0)found.fake.push(w);else found.real.push(w.replace('-',''));}});
-  return { score:Math.max(-8,Math.min(score,14)), found };
+  return { score:Math.max(-5,Math.min(score,10)), found };
 }
 
 // ══════════════════════════════════════════
@@ -801,17 +812,19 @@ function matchDataset(text){
 // VERDICT
 // ══════════════════════════════════════════
 function verdict(score){
-  if(score>=7)  return{text:'LIKELY FAKE NEWS',        cls:'fake',icon:'✕'};
-  if(score>=3.5)return{text:'SUSPICIOUS — VERIFY',     cls:'warn',icon:'!'};
-  if(score>=1)  return{text:'SLIGHT FAKE INDICATORS',  cls:'warn',icon:'?'};
-  if(score<=-5) return{text:'CREDIBLE NEWS',           cls:'real',icon:'✓'};
-  if(score<=-2) return{text:'PROBABLY CREDIBLE',       cls:'real',icon:'✓'};
-  return              {text:'UNCERTAIN',               cls:'warn',icon:'?'};
+  // Score range with new weights: roughly -8 to +12
+  if(score>=5)   return{text:'LIKELY FAKE NEWS',        cls:'fake',icon:'✕'};
+  if(score>=2.5) return{text:'SUSPICIOUS — VERIFY',     cls:'warn',icon:'!'};
+  if(score>=0.8) return{text:'SLIGHT FAKE INDICATORS',  cls:'warn',icon:'?'};
+  if(score<=-4)  return{text:'CREDIBLE NEWS',           cls:'real',icon:'✓'};
+  if(score<=-1.5)return{text:'PROBABLY CREDIBLE',       cls:'real',icon:'✓'};
+  return               {text:'UNCERTAIN — VERIFY',      cls:'warn',icon:'?'};
 }
 function calcConf(score){
+  // More honest confidence — avoid 96% for routine headlines
   const a=Math.abs(score);
-  if(a>=10)return 96;if(a>=7)return 90;if(a>=5)return 84;
-  if(a>=3)return 75;if(a>=1)return 63;return 52;
+  if(a>=7) return 92; if(a>=5) return 85; if(a>=3.5) return 78;
+  if(a>=2) return 70;  if(a>=1) return 62; return 54;
 }
 
 // ══════════════════════════════════════════
@@ -848,8 +861,8 @@ async function checkNews() {
   if (sourceUrl) {
     domainResult=getDomainRep(sourceUrl);
     if (domainResult) {
-      if (domainResult.rep==='trusted') { domainScore=-4; domainSignals.push({type:'real',msg:`Domain "${domainResult.domain}" is TRUSTED — ${domainResult.cat} (${domainResult.bias})`}); }
-      else if (domainResult.rep==='fake') { domainScore=+5; domainSignals.push({type:'fake',msg:`Domain "${domainResult.domain}" is a KNOWN FAKE/MISINFORMATION SOURCE — ${domainResult.cat}`}); }
+      if (domainResult.rep==='trusted') { domainScore=-2.5; domainSignals.push({type:'real',msg:`Domain "${domainResult.domain}" is TRUSTED — ${domainResult.cat} (${domainResult.bias})`}); }
+      else if (domainResult.rep==='fake') { domainScore=+4; domainSignals.push({type:'fake',msg:`Domain "${domainResult.domain}" is a KNOWN FAKE/MISINFORMATION SOURCE — ${domainResult.cat}`}); }
       else if (domainResult.rep==='satire') { domainScore=+2; domainSignals.push({type:'fake',msg:`Domain "${domainResult.domain}" is a SATIRE site — ${domainResult.cat}`}); }
       setSrc('domain',domainResult.rep==='trusted'?'ok':'fail',domainResult.rep.toUpperCase());
     } else setSrc('domain','','UNKNOWN');
@@ -880,13 +893,13 @@ async function checkNews() {
   await dl(150);
 
   const total=
-    domainScore         *1.5+
-    structural.score    *1.0+
-    vocabulary.score    *0.8+
-    newsdataResult.score*1.0+
-    wikiResult.score    *0.8+
-    claimResult.score   *0.6+
-    datasetResult.score *0.5;
+    domainScore         *1.2+   // domain: strong but not overwhelming
+    structural.score    *0.8+   // structural patterns
+    vocabulary.score    *0.5+   // vocab: reduced (single words shouldn't swing score hard)
+    newsdataResult.score*0.7+   // live news RSS
+    wikiResult.score    *0.6+   // wikipedia cross-ref
+    claimResult.score   *0.3+   // sentence analysis (local, supplementary)
+    datasetResult.score *0.4;   // dataset match
 
   displayResult({structural,vocabulary,datasetResult,wikiResult,newsdataResult,claimResult,domainResult,domainScore,domainSignals,total,analyzeText,sourceUrl});
   if (btn) btn.disabled=false;
@@ -922,7 +935,8 @@ function displayResult(d) {
   safeText('verdictSub',`Confidence: ${conf}% | Score: ${total.toFixed(2)} | Domain + Wikipedia + Live News RSS + Sentence Analysis + Dataset`);
   safeText('verdictScore',(total>=0?'+':'')+total.toFixed(1));
 
-  const fp=Math.min(100,Math.max(0,Math.round(50+total*4.2)));
+  // More balanced meter: score -8 → 8% fake, score +8 → 92% fake
+  const fp=Math.min(92,Math.max(8,Math.round(50+total*5.2)));
   setTimeout(()=>{setMeter('mFake','mvFake',fp);setMeter('mReal','mvReal',100-fp);setMeter('mConf','mvConf',conf);},120);
 
   const bdItems=[
