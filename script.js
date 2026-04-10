@@ -932,25 +932,69 @@ function displayResult(d) {
   if(vp)vp.className=`verdict-pulse ${v.cls}`;
   const vl=document.getElementById('verdictLabel');
   if(vl){vl.textContent=v.text;vl.className=`verdict-label ${v.cls}`;}
-  safeText('verdictSub',`Confidence: ${conf}% | Score: ${total.toFixed(2)} | Domain + Wikipedia + Live News RSS + Sentence Analysis + Dataset`);
+  safeText('verdictSub',`Confidence: ${conf}% | Score: ${total.toFixed(2)} | ${total<0?'Negative score = more credible signals found':'Positive score = more fake signals found'}`);
   safeText('verdictScore',(total>=0?'+':'')+total.toFixed(1));
 
   // More balanced meter: score -8 → 8% fake, score +8 → 92% fake
   const fp=Math.min(92,Math.max(8,Math.round(50+total*5.2)));
   setTimeout(()=>{setMeter('mFake','mvFake',fp);setMeter('mReal','mvReal',100-fp);setMeter('mConf','mvConf',conf);},120);
 
+  // ── SCORE LEGEND (shown once above breakdown) ──
+  const legendHTML = `
+    <div class="score-legend">
+      <span class="legend-item neg">◀ NEGATIVE = CREDIBLE SIGNAL</span>
+      <span class="legend-sep">|</span>
+      <span class="legend-item pos">FAKE SIGNAL = POSITIVE ▶</span>
+    </div>`;
+
+  // ── BREAKDOWN CELLS with human explanation ──
+  function getScoreLabel(key, score) {
+    const r = Math.round(score * 10) / 10;
+    if (key === 'DOMAIN') {
+      if (r === 0) return 'Not checked (no URL)';
+      if (r < 0)   return `Trusted source detected`;
+      if (r > 0)   return `Known fake/satire domain`;
+    }
+    if (key === 'STRUCTURE') {
+      if (r === 0) return 'Neutral writing style';
+      if (r < 0)   return `Wire journalism format`;
+      if (r > 0)   return `${Math.abs(r) > 2 ? 'Strong' : 'Mild'} clickbait patterns`;
+    }
+    if (key === 'VOCAB') {
+      if (r === 0) return 'No strong signals';
+      if (r < 0)   return `Credibility markers found`;
+      if (r > 0)   return `Sensational words found`;
+    }
+    if (key === 'WIKIPEDIA') {
+      if (r === 0) return 'No topics found';
+      if (r < 0)   return `${Math.round(Math.abs(score)/0.7)} topic(s) verified`;
+      if (r > 0)   return 'Topics not documented';
+    }
+    if (key === 'NEWSDATA') {
+      if (r === 0) return 'Not searched';
+      if (r < 0)   return `Story found in real news`;
+      if (r > 0)   return 'Not in major outlets';
+    }
+    return '';
+  }
+
   const bdItems=[
-    {ico:'🏷',lbl:'DOMAIN',     score:domainScore},
-    {ico:'⬡', lbl:'STRUCTURE',  score:structural.score},
-    {ico:'◎', lbl:'VOCAB',      score:vocabulary.score},
-    {ico:'📖',lbl:'WIKIPEDIA',  score:wikiResult.score},
-    {ico:'📡',lbl:'NEWSDATA',   score:newsdataResult.score},
+    {ico:'🏷', lbl:'DOMAIN',    score:domainScore,       tip:'Checks if the source domain is known fake, satire, or trusted (e.g. reuters.com = trusted, infowars.com = fake)'},
+    {ico:'⬡',  lbl:'STRUCTURE', score:structural.score,  tip:'Analyses headline patterns: "Watch:", censored words, "BREAKING" = fake signals. Reuters format, "u.s.", source tags = credible signals'},
+    {ico:'◎',  lbl:'VOCAB',     score:vocabulary.score,  tip:'Scans for sensational words (meltdown, hilarious, exposed) = fake. Wire journalism words (senate, legislation, reuters) = credible'},
+    {ico:'📖', lbl:'WIKIPEDIA', score:wikiResult.score,  tip:'Searches Wikipedia for key entities in the text. Topics documented on Wikipedia = credible signal. Not found = suspicious'},
+    {ico:'📡', lbl:'NEWSDATA',  score:newsdataResult.score, tip:'Searches Google News, NDTV, BBC, TOI, Reuters RSS for this topic. Found in real news = credible. Absent = suspicious'},
   ];
-  safeHTML('breakdown',bdItems.map((b,i)=>{
+
+  safeHTML('breakdown', legendHTML + bdItems.map((b,i)=>{
     const r=Math.round(b.score*10)/10;
-    return `<div class="bd-cell ${r>0?'positive':r<0?'negative':''}" style="animation-delay:${i*.06}s">
-      <div class="bd-ico">${b.ico}</div><div class="bd-lbl">${b.lbl}</div>
+    const label = getScoreLabel(b.lbl, b.score);
+    const meaning = r < 0 ? 'credible-signal' : r > 0 ? 'fake-signal' : 'neutral-signal';
+    return `<div class="bd-cell ${r>0?'positive':r<0?'negative':''}" style="animation-delay:${i*.06}s" title="${b.tip}">
+      <div class="bd-ico">${b.ico}</div>
+      <div class="bd-lbl">${b.lbl}</div>
       <div class="bd-v ${r>0?'p':r<0?'n':''}">${r>=0?'+':''}${r}</div>
+      <div class="bd-meaning ${meaning}">${label}</div>
     </div>`;
   }).join(''));
 
