@@ -206,13 +206,16 @@ textarea::placeholder{color:var(--tm);line-height:1.8}
 @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .section-label{font-family:var(--fd);font-size:.63rem;letter-spacing:.14em;color:var(--tm);margin-bottom:8px;display:flex;align-items:center;gap:8px}
 .live-dot{background:var(--red);color:#fff;font-family:var(--fm);font-size:.48rem;padding:1px 6px;border-radius:8px;animation:blink 1.5s infinite}
-.breakdown-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
-@media(max-width:600px){.breakdown-grid{grid-template-columns:repeat(3,1fr)}}
-.bd-cell{padding:8px 6px;background:var(--bg2);border:1px solid var(--b);border-radius:5px;text-align:center;animation:cellIn .4s ease both}
-.bd-cell:nth-child(1){animation-delay:.05s}.bd-cell:nth-child(2){animation-delay:.1s}.bd-cell:nth-child(3){animation-delay:.15s}.bd-cell:nth-child(4){animation-delay:.2s}.bd-cell:nth-child(5){animation-delay:.25s}
+.breakdown-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+@media(max-width:500px){.breakdown-grid{grid-template-columns:repeat(3,1fr)}}
+.bd-cell{padding:10px 5px 9px;background:var(--bg2);border:1px solid var(--b);border-radius:6px;text-align:center;animation:cellIn .4s ease both;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:help;position:relative;overflow:visible;min-width:0}
+.bd-cell:nth-child(2){animation-delay:.05s}.bd-cell:nth-child(3){animation-delay:.1s}.bd-cell:nth-child(4){animation-delay:.15s}.bd-cell:nth-child(5){animation-delay:.2s}.bd-cell:nth-child(6){animation-delay:.25s}
 @keyframes cellIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-.bd-cell.positive{border-color:var(--rd);background:rgba(255,45,85,.04)}.bd-cell.negative{border-color:var(--gd);background:rgba(0,255,136,.03)}
-.bd-ico{font-size:.82rem;color:var(--tm);margin-bottom:2px}.bd-lbl{font-family:var(--fd);font-size:.48rem;letter-spacing:.1em;color:var(--tm);margin-bottom:2px}.bd-v{font-family:var(--fm);font-size:.95rem;color:var(--txt)}.bd-v.p{color:var(--red)}.bd-v.n{color:var(--grn)}
+.bd-cell.positive{border-color:var(--rd);background:rgba(255,45,85,.06)}.bd-cell.negative{border-color:var(--gd);background:rgba(0,255,136,.05)}
+.bd-ico{font-size:.9rem;line-height:1;opacity:.75}
+.bd-lbl{font-family:var(--fd);font-size:.55rem;letter-spacing:.08em;color:rgba(205,228,245,.6);font-weight:700}
+.bd-v{font-family:var(--fm);font-size:1.1rem;line-height:1.1;font-weight:700;color:var(--txt)}
+.bd-v.p{color:var(--red)}.bd-v.n{color:var(--grn)}
 .loading-msg{font-family:var(--fm);font-size:.63rem;color:var(--tm);padding:6px}
 .article-info{display:flex;flex-direction:column;gap:4px;font-family:var(--fm);font-size:.63rem}
 .ai-row{display:flex;gap:8px}.ai-lbl{color:var(--tm);min-width:65px}.ai-val{color:var(--cyan);word-break:break-all}
@@ -273,39 +276,35 @@ textarea::placeholder{color:var(--tm);line-height:1.8}
 @keyframes toastOut{to{opacity:0;transform:translateY(10px)}}
 @media(max-width:600px){.header-inner{flex-direction:column;align-items:flex-start}.verdict-score{display:none}.api-key-input{width:100%}.api-key-row{flex-direction:column;align-items:flex-start}}
 
-/* ── SCORE LEGEND & BREAKDOWN MEANING (added for clarity) ── */
-.score-legend{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;padding:5px 8px;background:rgba(0,0,0,.25);border-radius:4px;font-family:var(--fm);font-size:.52rem;letter-spacing:.06em}
-.legend-item{padding:2px 7px;border-radius:3px}
-.legend-item.neg{color:var(--grn);background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.25)}
-.legend-item.pos{color:var(--red);background:rgba(255,45,85,.08);border:1px solid rgba(255,45,85,.25)}
-.legend-sep{color:var(--tm)}
-.bd-meaning{font-family:var(--fb);font-size:.46rem;color:var(--tm);margin-top:3px;line-height:1.3;letter-spacing:.01em}
-.bd-meaning.credible-signal{color:rgba(0,255,136,.7)}
-.bd-meaning.fake-signal{color:rgba(255,45,85,.7)}
-.bd-meaning.neutral-signal{color:var(--tm)}
-.bd-cell{cursor:help;position:relative}
-/* Tooltip on hover */
+/* ── SCORE LEGEND & BREAKDOWN MEANING ── */
+.score-legend{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:10px;padding:7px 12px;background:rgba(0,0,0,.3);border:1px solid var(--b);border-radius:5px;font-family:var(--fm);font-size:.6rem;letter-spacing:.05em}
+.legend-item{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:3px;font-weight:700;font-size:.6rem}
+.legend-item.neg{color:var(--grn);background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3)}
+.legend-item.pos{color:var(--red);background:rgba(255,45,85,.1);border:1px solid rgba(255,45,85,.3)}
+.legend-sep{color:rgba(205,228,245,.25);font-size:.7rem}
+.bd-meaning{font-family:var(--fb);font-size:.53rem;color:var(--tm);margin-top:4px;line-height:1.3;padding:0 2px}
+.bd-meaning.credible-signal{color:rgba(0,255,136,.9);font-weight:600}
+.bd-meaning.fake-signal{color:rgba(255,45,85,.9);font-weight:600}
+.bd-meaning.neutral-signal{color:rgba(205,228,245,.45)}
+/* Tooltip — appears below the cell to avoid overlap with legend above */
 .bd-cell[title]:hover::after{
   content:attr(title);
   position:absolute;
-  bottom:calc(100% + 6px);
+  top:calc(100% + 7px);
   left:50%;
   transform:translateX(-50%);
-  background:var(--panel2);
-  border:1px solid var(--b2);
-  color:var(--td);
+  background:rgba(11,17,32,.97);
+  border:1px solid var(--cyan);
+  color:var(--txt);
   font-family:var(--fb);
-  font-size:.6rem;
-  padding:6px 10px;
-  border-radius:5px;
-  white-space:nowrap;
-  max-width:220px;
+  font-size:.64rem;
+  padding:8px 12px;
+  border-radius:6px;
+  width:200px;
   white-space:normal;
   text-align:center;
-  z-index:100;
-  box-shadow:0 4px 16px rgba(0,0,0,.5);
+  z-index:200;
+  box-shadow:0 6px 24px rgba(0,0,0,.7),0 0 12px var(--cg);
   pointer-events:none;
-  line-height:1.5;
+  line-height:1.6;
 }
-/* Make breakdown grid taller to fit the meaning label */
-.bd-cell{padding:8px 5px 7px}
