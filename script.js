@@ -73,6 +73,22 @@ const DOMAIN_DB = {
   'ft.com':              { rep:'trusted', cat:'Financial Newspaper', bias:'Center' },
   'lemonde.fr':          { rep:'trusted', cat:'French Newspaper', bias:'Center-Left' },
   'spiegel.de':          { rep:'trusted', cat:'German Magazine', bias:'Center-Left' },
+  // Major Indian news outlets
+  'thehindu.com':        { rep:'trusted', cat:'Indian National Newspaper', bias:'Center-Left' },
+  'hindustantimes.com':  { rep:'trusted', cat:'Indian National Newspaper', bias:'Center' },
+  'indiatoday.in':       { rep:'trusted', cat:'Indian News Magazine', bias:'Center' },
+  'ndtv.com':            { rep:'trusted', cat:'Indian Broadcast News', bias:'Center-Left' },
+  'timesofindia.com':    { rep:'trusted', cat:'Indian National Newspaper', bias:'Center' },
+  'indianexpress.com':   { rep:'trusted', cat:'Indian National Newspaper', bias:'Center-Left' },
+  'theprint.in':         { rep:'trusted', cat:'Indian Digital News', bias:'Center' },
+  'scroll.in':           { rep:'trusted', cat:'Indian Digital News', bias:'Left-Center' },
+  'thewire.in':          { rep:'trusted', cat:'Indian Investigative', bias:'Left' },
+  'livemint.com':        { rep:'trusted', cat:'Indian Financial News', bias:'Center' },
+  'businessstandard.com':{ rep:'trusted', cat:'Indian Financial News', bias:'Center' },
+  'economictimes.com':   { rep:'trusted', cat:'Indian Financial News', bias:'Center' },
+  'deccanherald.com':    { rep:'trusted', cat:'Indian Regional Newspaper', bias:'Center' },
+  'tribuneindia.com':    { rep:'trusted', cat:'Indian Regional Newspaper', bias:'Center' },
+  'telegraphindia.com':  { rep:'trusted', cat:'Indian National Newspaper', bias:'Center-Left' },
   'infowars.com':        { rep:'fake', cat:'Conspiracy / Extremist', bias:'Extreme Right' },
   'naturalnews.com':     { rep:'fake', cat:'Health Misinformation', bias:'Extreme Right' },
   'beforeitsnews.com':   { rep:'fake', cat:'Conspiracy / Clickbait', bias:'Extreme Right' },
@@ -413,7 +429,7 @@ const WIKI_STOPWORDS = new Set([
   'of','in','on','at','to','for','with','by','from','about','this','that',
   'it','he','she','they','we','you','and','or','but','not','so','if','as',
   'just','watch','breaking','says','said','after','before','very','also',
-  // GENERIC TIME/PLACE WORDS that are often capitalised but useless for fact-checking
+  // GENERIC TIME/PLACE WORDS
   'january','february','march','april','may','june','july','august',
   'september','october','november','december','monday','tuesday','wednesday',
   'thursday','friday','saturday','sunday','today','tomorrow','yesterday',
@@ -421,8 +437,16 @@ const WIKI_STOPWORDS = new Set([
   'reuters','associated','press','breaking','exclusive','watch','report',
   'confirmed','sources','officials','statement','update','live','latest',
   'news','media','show','video','tweet','image','photo','report',
-  // Country adjectives often in headlines
+  // Country/region adjectives often in headlines
   'american','british','french','german','chinese','russian','indian',
+  // Common Indian geography/admin terms that produce false Wikipedia hits
+  'nagar','district','pradesh','state','city','town','village','ward',
+  'sector','block','zone','region','area','division','tehsil',
+  // Religious/cultural titles that appear in place names
+  'buddha','gautam','singh','kumar','lal','ram','devi','nath',
+  // Generic political/policy terms
+  'protest','workers','labour','wages','hike','minimum','interim',
+  'government','minister','party','election','policy','scheme',
 ]);
 
 function extractBestEntities(text) {
@@ -496,7 +520,9 @@ function extractBestEntities(text) {
 }
 
 // ══════════════════════════════════════════
-// WIKIPEDIA — FIXED entity extraction
+// WIKIPEDIA — with relevance filtering
+// Rejects Wikipedia results that don't share
+// meaningful words with the article/headline
 // ══════════════════════════════════════════
 async function queryWikipedia(text) {
   setSrc('wiki','active','QUERYING');
@@ -507,6 +533,16 @@ async function queryWikipedia(text) {
     setSrc('wiki','','NO ENTITIES');
     return { score:0, signals:[], results:[] };
   }
+
+  // Build a set of significant words from the input for relevance check
+  const RELEV_STOP = new Set(['the','a','an','is','are','was','were','be','been',
+    'have','has','had','do','does','did','will','would','could','should',
+    'of','in','on','at','to','for','with','by','from','about','and','or',
+    'but','not','so','if','as','this','that','it','he','she','they','we']);
+  const inputWords = new Set(
+    text.toLowerCase().replace(/[^\w\s]/g,' ').split(/\s+/)
+      .filter(w => w.length > 3 && !RELEV_STOP.has(w))
+  );
 
   await Promise.allSettled(queries.map(async query => {
     try {
@@ -525,16 +561,29 @@ async function queryWikipedia(text) {
       const extract=(page.extract||'').replace(/\n+/g,' ').trim();
       if (!extract) return;
 
-      results.push({ query, title:pageTitle, extract, url:`https://en.wikipedia.org/wiki/${encodeURIComponent(pageTitle)}`, hitCount:sData.query?.searchinfo?.totalhits||0 });
-      score-=0.7;  // each verified topic: small credibility boost, not overwhelming
+      // ── RELEVANCE CHECK: does the Wikipedia page share meaningful words with input? ──
+      const pageWords = new Set(
+        (pageTitle + ' ' + extract).toLowerCase()
+          .replace(/[^\w\s]/g,' ').split(/\s+/)
+          .filter(w => w.length > 3 && !RELEV_STOP.has(w))
+      );
+      const overlap = [...inputWords].filter(w => pageWords.has(w)).length;
+      const relevanceRatio = overlap / Math.max(inputWords.size, 1);
+
+      // Require at least 2 overlapping words OR 10% of input words to appear in wiki page
+      // This prevents "Gautam Buddha Nagar" → "The Buddha" from being accepted
+      if (overlap < 2 && relevanceRatio < 0.10) return;
+
+      results.push({ query, title:pageTitle, extract, url:`https://en.wikipedia.org/wiki/${encodeURIComponent(pageTitle)}`, hitCount:sData.query?.searchinfo?.totalhits||0, overlap });
+      score-=0.7;
     } catch {}
   }));
 
   if (!results.length) {
     score+=1.5;
-    signals.push({ type:'fake', msg:`Wikipedia: No articles found for "${queries.slice(0,2).join('", "')}" — claims not documented` });
+    signals.push({ type:'fake', msg:`Wikipedia: No relevant articles found for key topics — claims not cross-referenced` });
   } else {
-    signals.push({ type:'real', msg:`Wikipedia: ${results.length} topic(s) verified with real article extracts (${results.map(r=>r.title).join(', ')})` });
+    signals.push({ type:'real', msg:`Wikipedia: ${results.length} relevant topic(s) verified (${results.map(r=>r.title).join(', ')})` });
   }
 
   setSrc('wiki',results.length>0?'ok':'fail',results.length>0?`${results.length} FOUND`:'NOT FOUND');
@@ -625,9 +674,9 @@ async function queryLiveNews(text) {
   const generalMatches = matched.filter(a => a.source !== 'Google News');
 
   if (googleMatches.length === 0 && generalMatches.length === 0) {
-    // Nothing found anywhere — moderate fake signal
+    // Nothing found — mild fake signal, but explain regional news may not appear
     score += 1.5;
-    signals.push({ type:'fake', msg:`Live News: No matching articles found in NDTV, TOI, BBC, Reuters, or Google News — story may not be in major outlets` });
+    signals.push({ type:'fake', msg:`Live News: No matching articles in Google News, NDTV, BBC, TOI, Reuters RSS — regional/local stories may not appear in these global feeds` });
     setSrc('newsdata','fail','0 RESULTS');
   } else if (googleMatches.length > 0) {
     // Google News search specifically found it — strong credibility signal
