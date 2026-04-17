@@ -202,7 +202,7 @@ textarea::placeholder{color:var(--tm);line-height:1.8}
 .meter-shimmer{position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);animation:shimmer 2.5s infinite}
 @keyframes shimmer{from{transform:translateX(-100%)}to{transform:translateX(200%)}}
 .meter-val{font-family:var(--fm);font-size:.65rem;color:var(--td);min-width:30px;text-align:right}
-.breakdown-section,.section-block{padding:11px 18px;border-bottom:1px solid var(--b);animation:fadeUp .4s ease}
+.breakdown-section,.section-block{padding:11px 18px;border-bottom:1px solid var(--b);animation:fadeUp .4s ease;overflow:visible}
 @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .section-label{font-family:var(--fd);font-size:.63rem;letter-spacing:.14em;color:var(--tm);margin-bottom:8px;display:flex;align-items:center;gap:8px}
 .live-dot{background:var(--red);color:#fff;font-family:var(--fm);font-size:.48rem;padding:1px 6px;border-radius:8px;animation:blink 1.5s infinite}
