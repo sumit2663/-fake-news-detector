@@ -89,6 +89,17 @@ const DOMAIN_DB = {
   'deccanherald.com':    { rep:'trusted', cat:'Indian Regional Newspaper', bias:'Center' },
   'tribuneindia.com':    { rep:'trusted', cat:'Indian Regional Newspaper', bias:'Center' },
   'telegraphindia.com':  { rep:'trusted', cat:'Indian National Newspaper', bias:'Center-Left' },
+  // International broadcasters
+  'wionews.com':         { rep:'trusted', cat:'Indian International Broadcaster', bias:'Center' },
+  'zeenews.india.com':   { rep:'trusted', cat:'Indian Broadcast News', bias:'Center' },
+  'firstpost.com':       { rep:'trusted', cat:'Indian Digital News', bias:'Center-Right' },
+  'news18.com':          { rep:'trusted', cat:'Indian Broadcast News', bias:'Center' },
+  'aninews.in':          { rep:'trusted', cat:'Indian News Agency', bias:'Center' },
+  'pti.in':              { rep:'trusted', cat:'Indian News Agency — PTI', bias:'Center' },
+  'theconversation.com': { rep:'trusted', cat:'Academic News', bias:'Left-Center' },
+  'straitstimes.com':    { rep:'trusted', cat:'Singapore Newspaper', bias:'Center' },
+  'scmp.com':            { rep:'trusted', cat:'South China Morning Post', bias:'Center' },
+  'japantimes.co.jp':    { rep:'trusted', cat:'Japan Newspaper', bias:'Center' },
   'infowars.com':        { rep:'fake', cat:'Conspiracy / Extremist', bias:'Extreme Right' },
   'naturalnews.com':     { rep:'fake', cat:'Health Misinformation', bias:'Extreme Right' },
   'beforeitsnews.com':   { rep:'fake', cat:'Conspiracy / Clickbait', bias:'Extreme Right' },
@@ -412,7 +423,22 @@ function parseArticleHTML(html,url) {
     doc.querySelector('article')||doc.querySelector('main')||doc.querySelector('[role="main"]')||
     doc.querySelector('.article-body,.story-body,.entry-content,.post-content,.article-content')||
     doc.querySelector('#article-body,#main-content,#content')||doc.body;
-  const rawText=(bodyEl?.innerText||bodyEl?.textContent||'').replace(/\s+/g,' ').trim();
+
+  // Also remove menu/nav junk elements that some sites leave in body
+  ['[class*="menu"]','[class*="navbar"]','[class*="breadcrumb"]','[class*="related"]',
+   '[class*="trending"]','[id*="menu"]','[id*="sidebar"]','[class*="social"]',
+   '[class*="share"]','[class*="login"]','[class*="subscribe"]','[class*="cookie"]',
+   '[class*="popup"]','[class*="modal"]','[class*="banner"]'
+  ].forEach(sel => {
+    try { bodyEl?.querySelectorAll(sel).forEach(e=>e.remove()); } catch {}
+  });
+
+  let rawText = (bodyEl?.innerText||bodyEl?.textContent||'').replace(/\s+/g,' ').trim();
+
+  // Strip long runs of concatenated navigation words (no spaces, CamelCase soup)
+  // e.g. "LiveTVLOGINvlogoutWorldPulseIndiaEntertainment" → removed
+  rawText = rawText.replace(/\b([A-Z][a-z]+){4,}\b/g, ' ').replace(/\s+/g,' ').trim();
+
   return { domain, title, author, date, text:rawText, wordCount:rawText.split(/\s+/).filter(Boolean).length };
 }
 
@@ -787,7 +813,14 @@ function analyzeStructure(text) {
   if (/ just /.test(t)) f(1.5,'"Just" for dramatic immediacy — outrage headline');
   if (/\b(wrecked|destroyed|obliterated|demolished|nuked|torched|shredded|blistered)\b/.test(t)) f(2,'Destruction verb — tabloid editorial style');
   if (/\b(hilarious|epic|brilliant|stunning|incredible|insane|disgusting|despicable|vile|unbelievable)\b/.test(t)) f(2,'Emotional superlative — editorialising');
-  if (/[\u2018\u2019\u201C\u201D]/.test(text)) f(1,'Smart/curly quotes — often used to misrepresent statements');
+  if (/[\u2018\u2019\u201C\u201D]/.test(text)) {
+    // Only penalise curly quotes if the quoted content looks sensational
+    // NOT if it's just a quoted speech or headline quote
+    const quoteContent = text.match(/[\u2018\u2019\u201C\u201D]([^''""\u2018\u2019\u201C\u201D]{5,40})[\u2018\u2019\u201C\u201D]/g)||[];
+    const sensationalQuotes = quoteContent.filter(q => /fake|lie|corrupt|cheat|steal|fraud|exposed|bombshell/i.test(q));
+    if (sensationalQuotes.length > 0) f(1,'Sensational quoted claim in headline');
+    // else: quotes are just normal speech attribution — no penalty
+  }
   if (/\b(busted|exposed|leaked|bombshell)\b/.test(t)) f(2,'Tabloid trigger word');
   if (/\b(conspiracy|cover.?up|they don.?t want|what they.?re hiding)\b/.test(t)) f(3,'Conspiracy framing language');
   if (/\b(share before|deleted|censored|banned)\b/.test(t)) f(4,'Urgency/censorship appeal — manipulation tactic');
