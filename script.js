@@ -502,17 +502,18 @@ function extractBestEntities(text) {
   }
 
   // Priority 2: Known abbreviations / proper noun acronyms
+  // Use \b word boundary to avoid matching "irs" inside "airstrike"
+  const lower = text.toLowerCase();
   const KNOWN_ENTITIES = {
     'nasa': 'NASA', 'fbi': 'FBI', 'cia': 'CIA', 'nsa': 'NSA',
-    'un': 'United Nations', 'who': 'World Health Organization',
-    'nato': 'NATO', 'nfl': 'NFL', 'nba': 'NBA', 'eu': 'European Union',
-    'gop': 'Republican Party', 'doj': 'United States Department of Justice',
-    'irs': 'Internal Revenue Service', 'cdc': 'CDC', 'nih': 'NIH',
+    'nato': 'NATO', 'nfl': 'NFL', 'nba': 'NBA',
+    'gop': 'Republican Party',
     'spacex': 'SpaceX', 'tesla': 'Tesla', 'twitter': 'Twitter', 'meta': 'Meta',
+    // Note: 'un', 'who', 'eu', 'irs', 'cdc', 'nih' removed — too short, cause false matches
   };
-  const lower = text.toLowerCase();
   for (const [key, val] of Object.entries(KNOWN_ENTITIES)) {
-    if (lower.includes(key)) entities.push(val);
+    // Require whole-word match using regex
+    if (new RegExp(`\\b${key}\\b`,'i').test(lower)) entities.push(val);
   }
 
   // Priority 3: Single significant proper nouns (4+ chars, Title case, not stopword)
@@ -1014,19 +1015,19 @@ function displayResult(d) {
   if(vp)vp.className=`verdict-pulse ${v.cls}`;
   const vl=document.getElementById('verdictLabel');
   if(vl){vl.textContent=v.text;vl.className=`verdict-label ${v.cls}`;}
-  safeText('verdictSub',`Confidence: ${conf}% | Score: ${total.toFixed(2)} | ${total<0?'Negative score = more credible signals found':'Positive score = more fake signals found'}`);
+  safeText('verdictSub',`${conf}% confidence · Score: ${total.toFixed(1)} · ${total<0?'More credibility signals than fake signals found':'More fake signals than credibility signals found'}`);
   safeText('verdictScore',(total>=0?'+':'')+total.toFixed(1));
 
   // More balanced meter: score -8 → 8% fake, score +8 → 92% fake
   const fp=Math.min(92,Math.max(8,Math.round(50+total*5.2)));
   setTimeout(()=>{setMeter('mFake','mvFake',fp);setMeter('mReal','mvReal',100-fp);setMeter('mConf','mvConf',conf);},120);
 
-  // ── SCORE LEGEND (shown once above breakdown) ──
+  // ── SCORE LEGEND — plain English, no arrows/jargon ──
   const legendHTML = `
     <div class="score-legend">
-      <span class="legend-item neg">◀ NEGATIVE = CREDIBLE SIGNAL</span>
-      <span class="legend-sep">|</span>
-      <span class="legend-item pos">FAKE SIGNAL = POSITIVE ▶</span>
+      <span class="legend-item neg">✓ Minus = More Credible</span>
+      <span class="legend-sep">·</span>
+      <span class="legend-item pos">✕ Plus = More Suspicious</span>
     </div>`;
 
   // ── BREAKDOWN CELLS with human explanation ──
